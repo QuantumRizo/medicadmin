@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { AddPatientDialog } from './AddPatientDialog';
-import type { Patient } from '../../appointments/types';
+import type { Patient, Appointment } from '../../appointments/types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -41,6 +41,48 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
     // Delete Confirmation State
     const [patientToDelete, setPatientToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [sortBy, setSortBy] = useState<'name' | 'appointment'>('name');
+
+    // --- Optimization: Pre-calculate first upcoming appointment for each patient ---
+    const nextAppointmentsMap = useMemo(() => {
+        const map = new Map<string, Appointment>();
+        const today = new Date();
+        
+        appointments.forEach(a => {
+            if (a.reason === 'blocked') return;
+            const apptDate = new Date(a.date + 'T' + a.time);
+            if (isAfter(apptDate, today)) {
+                const current = map.get(a.patientId);
+                if (!current || apptDate < new Date(current.date + 'T' + current.time)) {
+                    map.set(a.patientId, a);
+                }
+            }
+        });
+        return map;
+    }, [appointments]);
+
+    // --- Helpers for Patient Details ---
+    const getPatientHistory = (patientId: string) => {
+        const patientAppts = appointments
+            .filter(a => a.patientId === patientId)
+            .sort((a, b) => {
+                const dateA = new Date(a.date + 'T' + a.time);
+                const dateB = new Date(b.date + 'T' + b.time);
+                return dateB.getTime() - dateA.getTime(); // Newest first
+            });
+
+        const today = new Date();
+        const upcoming = patientAppts.filter(a => {
+            const apptDate = new Date(a.date + 'T' + a.time);
+            return isAfter(apptDate, today) && a.reason !== 'blocked';
+        });
+        const history = patientAppts.filter(a => {
+            const apptDate = new Date(a.date + 'T' + a.time);
+            return !isAfter(apptDate, today) || a.reason === 'blocked';
+        });
+
+        return { upcoming, history };
+    };
 
     // --- Logic: Patients per Hospital or Global ---
     const filteredPatients = useMemo(() => {
@@ -59,11 +101,32 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
 
         // 4. Filter by Search Term
         const search = searchTerm.toLowerCase();
-        return basePatients.filter(p =>
+        const filtered = basePatients.filter(p =>
             (p.name?.toLowerCase() || '').includes(search) ||
             (p.email?.toLowerCase() || '').includes(search)
         );
-    }, [appointments, patients, selectedHospitalFilter, searchTerm]);
+
+        // 5. Sort
+        const sorted = [...filtered];
+        if (sortBy === 'name') {
+            sorted.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
+        } else if (sortBy === 'appointment') {
+            sorted.sort((a, b) => {
+                const apptA = nextAppointmentsMap.get(a.id);
+                const apptB = nextAppointmentsMap.get(b.id);
+
+                if (!apptA && !apptB) return (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
+                if (!apptA) return 1;
+                if (!apptB) return -1;
+
+                const dateA = new Date(apptA.date + 'T' + apptA.time).getTime();
+                const dateB = new Date(apptB.date + 'T' + apptB.time).getTime();
+                return dateA - dateB;
+            });
+        }
+
+        return sorted;
+    }, [appointments, patients, selectedHospitalFilter, searchTerm, sortBy, nextAppointmentsMap]);
 
     // --- Global Autocomplete (Quick Jump) ---
     const globalSuggestions = useMemo(() => {
@@ -95,28 +158,6 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
     }, [appointments, patients, hospitals, searchTerm]);
 
 
-    // --- Helpers for Patient Details ---
-    const getPatientHistory = (patientId: string) => {
-        const patientAppts = appointments
-            .filter(a => a.patientId === patientId)
-            .sort((a, b) => {
-                const dateA = new Date(a.date + 'T' + a.time);
-                const dateB = new Date(b.date + 'T' + b.time);
-                return dateB.getTime() - dateA.getTime(); // Newest first
-            });
-
-        const today = new Date();
-        const upcoming = patientAppts.filter(a => {
-            const apptDate = new Date(a.date + 'T' + a.time);
-            return isAfter(apptDate, today) && a.reason !== 'blocked';
-        });
-        const history = patientAppts.filter(a => {
-            const apptDate = new Date(a.date + 'T' + a.time);
-            return !isAfter(apptDate, today) || a.reason === 'blocked';
-        });
-
-        return { upcoming, history };
-    };
 
     const handleSelectSuggestion = (suggestion: typeof globalSuggestions[0]) => {
         // Note: Logic to switch hospital is not in this component strictly, 
@@ -213,6 +254,14 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                 {hospitals.map(h => (
                                     <option key={h.id} value={h.id}>{h.name}</option>
                                 ))}
+                            </select>
+                            <select
+                                className="h-10 rounded-xl border border-slate-200 bg-white px-4 py-1 text-sm shadow-sm transition-all focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer font-medium"
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as 'name' | 'appointment')}
+                            >
+                                <option value="name">Orden: Alfabético</option>
+                                <option value="appointment">Orden: Citas Próximas</option>
                             </select>
                             <Badge variant="secondary" className="bg-sky-100 text-sky-700 hover:bg-sky-100 rounded-lg px-3 py-1 text-sm font-bold border-none">{filteredPatients.length}</Badge>
                         </div>

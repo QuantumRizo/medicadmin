@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { SERVICES } from '../features/appointments/types';
 import type { Appointment, Patient, Hospital } from '../features/appointments/types';
 import { isAppointmentPast } from '@/lib/dateUtils';
+import { standardizePhone } from '@/lib/utils';
 import { useAuth } from './AuthContext';
 
 interface AppointmentsContextType {
@@ -96,11 +97,13 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 slotInterval: h.slot_interval
             }));
 
-            const mappedPatients = (patientsData || []).map((p: any) => ({
-                ...p,
-                medicalHistory: p.medical_history,
-                appId: p.app_id
-            }));
+            const mappedPatients = (patientsData || [])
+                .map((p: any) => ({
+                    ...p,
+                    medicalHistory: p.medical_history,
+                    appId: p.app_id
+                }))
+                .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' }));
 
             setAppointments(mappedAppointments);
             setPatients(mappedPatients as Patient[]);
@@ -132,17 +135,28 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
     // Implementation of CRUD methods (copied and adapted from useAppointments.ts)
     const saveAppointment = async (appointmentData: Partial<Appointment>, patientData: Patient) => {
         try {
-            let query = supabase.from('patients').select('id').eq('app_id', APP_ID);
-            if (patientData.email) {
-                const safeEmail = patientData.email.replace(/"/g, '');
-                const safeName = patientData.name.replace(/"/g, '');
-                const safePhone = patientData.phone.replace(/"/g, '');
-                query = query.or(`email.eq."${safeEmail}",and(name.eq."${safeName}",phone.eq."${safePhone}")`);
-            } else {
-                query = query.eq('name', patientData.name).eq('phone', patientData.phone);
-            }
-            const { data: existingPatient, error: searchError } = await query.maybeSingle();
+            const safePhone = standardizePhone(patientData.phone);
+            
+            // Match by phone first (prioritizing 10-digit match), then email
+            const { data: results, error: searchError } = await supabase
+                .from('patients')
+                .select('id')
+                .eq('app_id', APP_ID)
+                .eq('phone', safePhone);
+            
             if (searchError) throw searchError;
+
+            let existingPatient = results && results.length > 0 ? results[0] : null;
+
+            // If no phone match, try email
+            if (!existingPatient && patientData.email) {
+                const { data: emailResults } = await supabase
+                    .from('patients')
+                    .select('id')
+                    .eq('app_id', APP_ID)
+                    .eq('email', patientData.email);
+                if (emailResults && emailResults.length > 0) existingPatient = emailResults[0];
+            }
 
             let patientId = existingPatient?.id;
             if (patientId) {
@@ -185,6 +199,9 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
     const updatePatient = async (patient: Patient) => {
         try {
             const { error } = await supabase.from('patients').update({
+                name: patient.name,
+                phone: standardizePhone(patient.phone),
+                email: patient.email,
                 notes: patient.notes,
                 medical_history: patient.medicalHistory
             }).eq('id', patient.id);
@@ -309,15 +326,48 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
 
     const addPatient = async (patientData: { name: string, email: string, phone: string, notes?: string }) => {
         try {
+            const safePhone = standardizePhone(patientData.phone);
+            
+            // 1. Check if patient already exists by phone
+            const { data: results, error: searchError } = await supabase
+                .from('patients')
+                .select('*')
+                .eq('app_id', APP_ID)
+                .eq('phone', safePhone);
+            
+            if (searchError) throw searchError;
+
+            if (results && results.length > 0) {
+                const existingPatient = results[0];
+                console.log(`[Deduplication] Found existing patient: ${existingPatient.name} for phone ${safePhone}`);
+                
+                const mappedExisting = {
+                    ...existingPatient,
+                    medicalHistory: existingPatient.medical_history,
+                    appId: existingPatient.app_id
+                };
+                return mappedExisting;
+            }
+
+            console.log(`[Deduplication] No match for ${safePhone}, creating new.`);
+
+            // 2. If not, create new one
             const { data: newPatient, error: createError } = await supabase.from('patients').insert([{
                 name: patientData.name,
                 email: patientData.email || null,
-                phone: patientData.phone,
+                phone: safePhone,
                 notes: patientData.notes || '',
                 app_id: APP_ID
             }]).select().single();
             if (createError) throw createError;
-            return newPatient;
+            
+            // Map the newly created patient as well
+            const mappedNew = {
+                ...newPatient,
+                medicalHistory: newPatient.medical_history,
+                appId: newPatient.app_id
+            };
+            return mappedNew;
         } catch (error) {
             console.error("Error adding patient:", error);
             throw error;

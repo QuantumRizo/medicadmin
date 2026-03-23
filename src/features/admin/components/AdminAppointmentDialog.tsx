@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { type Hospital } from "@/features/appointments/types";
 import { ArrowLeft, Building2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { useAppointments } from "../../appointments/hooks/useAppointments";
+import { standardizePhone } from "@/lib/utils";
+import { AlertTriangle } from "lucide-react";
 
 interface AdminAppointmentDialogProps {
     hospitals: Hospital[];
@@ -19,6 +22,8 @@ interface AdminAppointmentDialogProps {
 
 export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, getAvailableSlots, initialPatientData }: AdminAppointmentDialogProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { patients } = useAppointments();
+    const [existingMatch, setExistingMatch] = useState<any>(null);
 
     // Helper helper
     const formatTime = (timeStr: string) => {
@@ -37,6 +42,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
     useEffect(() => {
         if (open) {
             setBookingHospitalId(null); // Always ask "Where?" on open
+            setExistingMatch(null);
             // If we have initial data, we might want to auto-select hospital if provided, but for now just prefill data
             if (initialPatientData) {
                 setPatient({
@@ -77,6 +83,16 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
 
     const handlePatientChange = (key: string, value: string) => {
         setPatient(prev => ({ ...prev, [key]: value }));
+        
+        if (key === 'phone') {
+            const safe = standardizePhone(value);
+            if (safe.length >= 8) {
+                const match = patients.find(p => standardizePhone(p.phone) === safe);
+                setExistingMatch(match || null);
+            } else {
+                setExistingMatch(null);
+            }
+        }
     };
 
     const handleAppointmentChange = (key: string, value: string) => {
@@ -198,8 +214,14 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                         value={patient.phone}
                                         onChange={(e) => handlePatientChange('phone', e.target.value)}
                                         placeholder="55 1234 5678"
-                                        className="rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500"
+                                        className={`rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500 ${existingMatch ? 'border-amber-400 bg-amber-50' : ''}`}
                                     />
+                                    {existingMatch && (
+                                        <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-amber-100/50 text-amber-800 text-[11px] font-bold border border-amber-200 animate-in fade-in slide-in-from-top-1">
+                                            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                            <span>Paciente ya registrado: {existingMatch.name}</span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="space-y-2">

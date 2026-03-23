@@ -63,6 +63,7 @@ export const PatientClinicalRecord = ({
     // Unsaved changes tracking
     const [initialHistoryStr, setInitialHistoryStr] = useState("");
     const [initialNotesStr, setInitialNotesStr] = useState("");
+    const [initialCoreStr, setInitialCoreStr] = useState("");
 
     const normalizeForCompare = (val: any) => {
         return JSON.stringify(val, (_key, value) => {
@@ -85,9 +86,17 @@ export const PatientClinicalRecord = ({
         setHistory(loadedHistory);
         setInitialHistoryStr(normalizeForCompare(loadedHistory));
         setInitialNotesStr(normalizeForCompare(initialPatient.notes || ''));
+        setInitialCoreStr(normalizeForCompare({ 
+            name: initialPatient.name, 
+            phone: initialPatient.phone, 
+            email: initialPatient.email 
+        }));
     }, [initialPatient]);
 
-    const hasUnsavedChanges = normalizeForCompare(history) !== initialHistoryStr || normalizeForCompare(generalNotes) !== initialNotesStr;
+    const hasUnsavedChanges = 
+        normalizeForCompare(history) !== initialHistoryStr || 
+        normalizeForCompare(generalNotes) !== initialNotesStr ||
+        normalizeForCompare({ name: patient.name, phone: patient.phone, email: patient.email }) !== initialCoreStr;
 
     const handleChange = (field: keyof MedicalHistory, value: any) => {
         setHistory(prev => ({ ...prev, [field]: value }));
@@ -116,6 +125,11 @@ export const PatientClinicalRecord = ({
             setPatient(updated);
             setInitialHistoryStr(normalizeForCompare(history));
             setInitialNotesStr(normalizeForCompare(generalNotes));
+            setInitialCoreStr(normalizeForCompare({ 
+                name: updated.name, 
+                phone: updated.phone, 
+                email: updated.email 
+            }));
             toast.success("Expediente médico guardado correctamente");
         } catch (error) {
             console.error("Error saving patient", error);
@@ -174,7 +188,12 @@ export const PatientClinicalRecord = ({
                                     {patient.name.charAt(0)}
                                 </div>
                                 <div>
-                                    <h2 className="text-xl font-bold text-[#1c334a] leading-tight mb-1">{patient.name}</h2>
+                                    <Input
+                                        value={patient.name}
+                                        onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
+                                        className="text-xl font-bold text-[#1c334a] text-center bg-transparent border-none focus-visible:ring-1 focus-visible:ring-sky-500 mb-1 h-auto py-1 px-2"
+                                        placeholder="Nombre del paciente"
+                                    />
                                     <div className="text-sm text-gray-500 font-medium space-x-2">
                                         <span>{history.dateOfBirth ? format(parseISO(history.dateOfBirth), 'dd/MMM/yyyy', { locale: es }) : 'Sin fecha'}</span>
                                         <span>|</span>
@@ -183,8 +202,24 @@ export const PatientClinicalRecord = ({
                                     <div className="text-sm text-gray-400 mt-1">{calculateAge(history.dateOfBirth) ? `${calculateAge(history.dateOfBirth)} años` : ''}</div>
                                 </div>
                                 <div className="w-full pt-4 border-t border-gray-100 flex flex-col gap-2 text-sm text-gray-600">
-                                    <span className="flex items-center gap-2 justify-center"><Phone className="w-3.5 h-3.5" /> {patient.phone}</span>
-                                    <span className="flex items-center gap-2 justify-center"><Mail className="w-3.5 h-3.5" /> {patient.email}</span>
+                                    <div className="flex items-center gap-2 px-2 bg-gray-50/50 rounded-lg">
+                                        <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                        <Input
+                                            value={patient.phone}
+                                            onChange={(e) => setPatient(prev => ({ ...prev, phone: e.target.value }))}
+                                            className="h-8 text-xs bg-transparent border-none focus-visible:ring-0 px-1 font-medium"
+                                            placeholder="Teléfono"
+                                        />
+                                    </div>
+                                    <div className="flex items-center gap-2 px-2 bg-gray-50/50 rounded-lg">
+                                        <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                        <Input
+                                            value={patient.email}
+                                            onChange={(e) => setPatient(prev => ({ ...prev, email: e.target.value }))}
+                                            className="h-8 text-xs bg-transparent border-none focus-visible:ring-0 px-1 font-medium"
+                                            placeholder="Correo electrónico"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>

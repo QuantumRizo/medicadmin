@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, CalendarPlus, CheckCircle } from "lucide-react";
+import { UserPlus, CalendarPlus, CheckCircle, AlertTriangle } from "lucide-react";
+import { useAppointments } from "../../appointments/hooks/useAppointments";
+import { standardizePhone } from "@/lib/utils";
 
 interface AddPatientDialogProps {
     open: boolean;
@@ -23,10 +25,22 @@ export const AddPatientDialog = ({ open, onOpenChange, onSave, onBookAppointment
         phone: ''
     });
 
+    const { patients } = useAppointments();
     const [createdPatient, setCreatedPatient] = useState<any>(null);
+    const [existingMatch, setExistingMatch] = useState<any>(null);
 
     const handleChange = (key: string, value: string) => {
         setFormData(prev => ({ ...prev, [key]: value }));
+        
+        if (key === 'phone') {
+            const safe = standardizePhone(value);
+            if (safe.length >= 8) {
+                const match = patients.find(p => standardizePhone(p.phone) === safe);
+                setExistingMatch(match || null);
+            } else {
+                setExistingMatch(null);
+            }
+        }
     };
 
     const handleSubmit = async () => {
@@ -52,6 +66,7 @@ export const AddPatientDialog = ({ open, onOpenChange, onSave, onBookAppointment
         setFormData({ name: '', email: '', phone: '' });
         setStep('form');
         setCreatedPatient(null);
+        setExistingMatch(null);
     };
 
     const handleClose = () => {
@@ -114,8 +129,14 @@ export const AddPatientDialog = ({ open, onOpenChange, onSave, onBookAppointment
                                     placeholder="55 1234 5678"
                                     value={formData.phone}
                                     onChange={(e) => handleChange('phone', e.target.value)}
-                                    className="rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500"
+                                    className={`rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500 ${existingMatch ? 'border-amber-400 bg-amber-50' : ''}`}
                                 />
+                                {existingMatch && (
+                                    <div className="flex items-center gap-2 mt-2 p-2 rounded-lg bg-amber-100/50 text-amber-800 text-[11px] font-bold border border-amber-200 animate-in fade-in slide-in-from-top-1">
+                                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                        <span>Paciente ya registrado: {existingMatch.name}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
