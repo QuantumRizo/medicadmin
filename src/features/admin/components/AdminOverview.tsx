@@ -1,63 +1,37 @@
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Users, Calendar, TrendingUp, Clock, MapPin, Edit2, Check, Building2, User, Trash2 } from 'lucide-react';
+import { Users, Calendar, TrendingUp, Clock, MapPin } from 'lucide-react';
 import { format, isToday, parseISO, isThisWeek, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { isAppointmentPast } from '@/lib/dateUtils';
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { AppointmentDetailDialog } from './AppointmentDetailDialog';
+import { formatTime } from '../../appointments/utils';
+import type { Appointment } from '../../appointments/types';
 
 interface AdminOverviewProps { }
 
 export const AdminOverview = ({ }: AdminOverviewProps) => {
     const { appointments, patients, hospitals, updateAppointment, getAvailableSlots, deleteAppointment } = useAppointments();
 
-    const formatTime = (timeStr: string) => {
-        if (!timeStr) return '';
-        const [hours, minutes] = timeStr.split(':');
-        const date = new Date();
-        date.setHours(parseInt(hours, 10));
-        date.setMinutes(parseInt(minutes, 10));
-        return new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true }).format(date);
-    };
+    const [selectedDetailApt, setSelectedDetailApt] = useState<Appointment | null>(null);
 
-    // Edit Mode State
-    const [isEditing, setIsEditing] = useState(false);
-    const [editDate, setEditDate] = useState("");
-    const [editTime, setEditTime] = useState("");
-    const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-
-    // Delete confirmation state
-    const [apptToDelete, setApptToDelete] = useState<string | null>(null);
-    const [isDeletingAppt, setIsDeletingAppt] = useState(false);
-
-    const startEditing = (appt: any) => {
-        setIsEditing(true);
-        setEditDate(appt.date);
-        setEditTime(appt.time);
-        setSelectedAppointmentId(appt.id);
-    };
-
-    const cancelEditing = () => {
-        setIsEditing(false);
-        setSelectedAppointmentId(null);
-    };
-
-    const saveReschedule = async () => {
-        if (!selectedAppointmentId || !editDate || !editTime) return;
+    const handleDeleteAppointment = async (apptId: string) => {
         try {
-            await updateAppointment(selectedAppointmentId, {
-                date: editDate,
-                time: editTime
-            });
+            await deleteAppointment(apptId);
+            toast.success('Cita eliminada correctamente');
+            setSelectedDetailApt(null);
+        } catch (e) {
+            toast.error('Error al eliminar la cita');
+        }
+    };
+
+    const handleUpdateAppointment = async (apptId: string, data: any) => {
+        try {
+            await updateAppointment(apptId, data);
             toast.success('Cita reprogramada correctamente');
-            setIsEditing(false);
-            setSelectedAppointmentId(null);
+            setSelectedDetailApt(null);
         } catch (e: any) {
             toast.error('Error al reprogramar cita', { description: e.message });
         }
@@ -91,59 +65,67 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
         <>
             <div className="space-y-4 animate-fade-in max-w-full overflow-hidden px-1 sm:px-0">
                 {/* KPI Grid - Stacked on very small, 2 cols on mobile, 4 on desktop */}
-                <div className="grid gap-3 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
-                    <Card className="shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-                            <CardTitle className="text-xs font-medium text-muted-foreground">
+                <div className="grid gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
+                    <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white transition-all hover:translate-y-[-2px]">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-2">
+                            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                                 Citas Hoy
                             </CardTitle>
-                            <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+                                <Calendar className="h-4 w-4" />
+                            </div>
                         </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="text-xl font-bold">{todayAppointments.length}</div>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                                {todayAppointments.length === 0 ? "Sin citas" : "Agendadas"}
+                        <CardContent className="p-5 pt-1">
+                            <div className="text-3xl font-extrabold text-slate-900">{todayAppointments.length}</div>
+                            <p className="text-xs text-slate-400 mt-1 font-medium">
+                                {todayAppointments.length === 0 ? "Sin citas" : "Agendadas para hoy"}
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-                            <CardTitle className="text-xs font-medium text-muted-foreground">
+                    <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white transition-all hover:translate-y-[-2px]">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-2">
+                            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                                 Pacientes
                             </CardTitle>
-                            <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+                                <Users className="h-4 w-4" />
+                            </div>
                         </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="text-xl font-bold text-primary">{totalActivePatients}</div>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                                Activos Globalmente
+                        <CardContent className="p-5 pt-1">
+                            <div className="text-3xl font-extrabold text-slate-900">{totalActivePatients}</div>
+                            <p className="text-xs text-slate-400 mt-1 font-medium">
+                                Activos en el sistema
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-                            <CardTitle className="text-xs font-medium text-muted-foreground">
-                                Sedes Activas
+                    <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white transition-all hover:translate-y-[-2px]">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-2">
+                            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+                                Sedes
                             </CardTitle>
-                            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+                                <MapPin className="h-4 w-4" />
+                            </div>
                         </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="text-xl font-bold">{activeHospitalsCount}</div>
-                            <p className="text-[10px] text-muted-foreground truncate">
-                                Con actividad
+                        <CardContent className="p-5 pt-1">
+                            <div className="text-3xl font-extrabold text-slate-900">{activeHospitalsCount}</div>
+                            <p className="text-xs text-slate-400 mt-1 font-medium">
+                                Sedes con actividad
                             </p>
                         </CardContent>
                     </Card>
-                    <Card className="shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-3 pb-1">
-                            <CardTitle className="text-xs font-medium text-muted-foreground">
+                    <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white transition-all hover:translate-y-[-2px]">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 p-5 pb-2">
+                            <CardTitle className="text-sm font-bold text-slate-500 uppercase tracking-wider">
                                 Esta Semana
                             </CardTitle>
-                            <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                            <div className="w-8 h-8 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
+                                <TrendingUp className="h-4 w-4" />
+                            </div>
                         </CardHeader>
-                        <CardContent className="p-3 pt-1">
-                            <div className="text-xl font-bold">{weekAppointments.length}</div>
-                            <p className="text-[10px] text-muted-foreground truncate">
+                        <CardContent className="p-5 pt-1">
+                            <div className="text-3xl font-extrabold text-slate-900">{weekAppointments.length}</div>
+                            <p className="text-xs text-slate-400 mt-1 font-medium">
                                 Próximos 7 días
                             </p>
                         </CardContent>
@@ -152,18 +134,20 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
 
                 <div className="grid gap-4 md:grid-cols-12 items-start">
                     {/* Main Column: Toda's Agenda (Now smaller 6 cols) */}
-                    <Card className="md:col-span-6 lg:col-span-6 shadow-sm flex flex-col h-full">
-                        <CardHeader className="p-3 pb-1">
-                            <CardTitle className="text-sm">Agenda de Hoy</CardTitle>
-                            <CardDescription className="text-xs">
+                    <Card className="md:col-span-6 lg:col-span-6 rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white flex flex-col h-full overflow-hidden">
+                        <CardHeader className="p-6 pb-2 border-b border-slate-50 bg-slate-50/30">
+                            <CardTitle className="text-lg font-extrabold text-[#0f172a]">Agenda de Hoy</CardTitle>
+                            <CardDescription className="text-sm font-medium text-slate-400 mt-1 capitalize">
                                 {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="p-3 pt-1 max-h-[400px] overflow-x-hidden overflow-y-auto custom-scrollbar">
+                        <CardContent className="p-6 pt-4 max-h-[500px] overflow-x-hidden overflow-y-auto custom-scrollbar">
                             {todayAppointments.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground">
-                                    <Calendar className="h-6 w-6 mb-1 opacity-20" />
-                                    <p className="text-xs">No hay citas programadas para hoy.</p>
+                                <div className="flex flex-col items-center justify-center py-12 text-center text-slate-300">
+                                    <div className="p-3 bg-sky-50 rounded-2xl text-sky-600 shadow-sm border border-sky-100/50">
+                                        <Calendar className="w-6 h-6" />
+                                    </div>
+                                    <p className="text-sm font-medium">No hay citas programadas para hoy.</p>
                                 </div>
                             ) : (
                                 <div className="space-y-1.5">
@@ -202,138 +186,13 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                                                             Bloqueado
                                                         </span>
                                                     )}
-                                                    <Dialog onOpenChange={(open) => !open && cancelEditing()}>
-                                                        {!isAppointmentPast(apt.date, apt.time) ? (
-                                                            <DialogTrigger asChild>
-                                                                <Button size="sm" className="h-7 text-xs px-2 bg-[#1c334a] text-white hover:bg-[#152738]">
-                                                                    Modificar
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                        ) : (
-                                                            <DialogTrigger asChild>
-                                                                <Button size="sm" variant="outline" className="h-7 text-xs px-2 text-gray-500">
-                                                                    Ver Detalle
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                        )}
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>
-                                                                    {isEditing ? 'Reprogramar Cita' : 'Detalles de la Cita'}
-                                                                </DialogTitle>
-                                                            </DialogHeader>
-
-                                                            {isEditing && selectedAppointmentId === apt.id ? (
-                                                                <div className="space-y-4 py-2">
-                                                                    <div className="grid gap-2">
-                                                                        <Label>Nueva Fecha</Label>
-                                                                        <Input
-                                                                            type="date"
-                                                                            value={editDate}
-                                                                            onChange={(e) => setEditDate(e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="grid gap-2">
-                                                                        <Label>Nuevo Horario</Label>
-                                                                        <select
-                                                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                                                            value={editTime}
-                                                                            onChange={(e) => setEditTime(e.target.value)}
-                                                                        >
-                                                                            <option value="" disabled>Seleccionar hora</option>
-                                                                            {getAvailableSlots(editDate, apt.hospitalId).map(slot => (
-                                                                                <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                                                            ))}
-                                                                            <option value={apt.time}>{formatTime(apt.time)} (Actual)</option>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div className="flex justify-end gap-2 pt-2">
-                                                                        <Button variant="outline" size="sm" onClick={cancelEditing}>Cancelar</Button>
-                                                                        <Button size="sm" onClick={saveReschedule} className="bg-[#1c334a]">
-                                                                            <Check className="w-4 h-4 mr-2" /> Guardar Cambios
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="grid gap-4 py-4">
-                                                                    <div className="flex items-center gap-3 bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-2">
-                                                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                                                            <Building2 className="w-4 h-4" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className="text-xs text-gray-500 block">Sede</span>
-                                                                            <span className="text-sm font-semibold text-[#1c334a]">
-                                                                                {hospitals.find(h => h.id === apt.hospitalId)?.name}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                                                            <User className="w-5 h-5" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <div className="font-bold text-lg">{patient?.name}</div>
-                                                                            <div className="text-sm text-gray-500">{patient?.email}</div>
-                                                                            <div className="text-sm text-gray-500">{patient?.phone}</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-2 gap-4 text-sm mt-2">
-                                                                        <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                                            <Calendar className="w-4 h-4 text-[#1c334a]" />
-                                                                            <div>
-                                                                                <span className="block text-xs text-gray-400">Fecha</span>
-                                                                                {format(parseISO(apt.date), "PPP", { locale: es })}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                                            <Clock className="w-4 h-4 text-[#1c334a]" />
-                                                                            <div>
-                                                                                <span className="block text-xs text-gray-400">Hora</span>
-                                                                                {formatTime(apt.time)}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="bg-gray-50 p-3 rounded-md text-sm">
-                                                                        <span className="font-semibold text-gray-700 block mb-1">Motivo:</span>
-                                                                        {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : apt.reason === 'follow-up' ? 'Seguimiento' : apt.reason)}
-                                                                    </div>
-                                                                    {apt.specificService && (
-                                                                        <div className="bg-yellow-50 p-3 rounded-md text-sm border border-yellow-100">
-                                                                            <span className="font-semibold text-yellow-800 block mb-1">Detalles:</span>
-                                                                            {apt.specificService}
-                                                                        </div>
-                                                                    )}
-
-                                                                    {isAppointmentPast(apt.date, apt.time) ? (
-                                                                        <div className="text-center p-2 text-xs text-gray-400 bg-gray-50 rounded-md border border-gray-100 mt-2">
-                                                                            Esta cita ya finalizó y no puede modificarse.
-                                                                        </div>
-                                                                    ) : (
-                                                                        <>
-                                                                            {apt.reason !== 'blocked' && (
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    className="w-full mt-2 border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                                                    onClick={() => startEditing(apt)}
-                                                                                >
-                                                                                    <Edit2 className="w-4 h-4 mr-2" /> Reprogramar Cita
-                                                                                </Button>
-                                                                            )}
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                className="w-full mt-2 border-red-200 text-red-600 hover:bg-red-50"
-                                                                                onClick={() => setApptToDelete(apt.id)}
-                                                                            >
-                                                                                <Trash2 className="w-4 h-4 mr-2" /> Eliminar Cita
-                                                                            </Button>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </DialogContent>
-                                                    </Dialog>
+                                                    <Button 
+                                            size="sm" 
+                                            className="h-9 px-4 rounded-xl font-bold bg-[#1c334a] text-white hover:bg-slate-900 shadow-lg shadow-slate-200"
+                                            onClick={() => setSelectedDetailApt(apt)}
+                                        >
+                                            DETALLE
+                                        </Button>
                                                 </div>
                                             </div>
                                         )
@@ -346,12 +205,12 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                     {/* Right Column: Next Up & Hospital Stats (Wider to balance) */}
                     <div className="md:col-span-6 lg:col-span-6 space-y-4">
                         {/* Next Up */}
-                        <Card className="shadow-sm">
-                            <CardHeader className="p-4 pb-2">
-                                <CardTitle className="text-sm">Próximas Citas</CardTitle>
+                        <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white overflow-hidden">
+                            <CardHeader className="p-6 pb-2">
+                                <CardTitle className="text-lg font-extrabold text-[#0f172a]">Próximas Citas</CardTitle>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                                <div className="space-y-3">
+                            <CardContent className="p-6 pt-0">
+                                <div className="space-y-4">
                                     {weekAppointments
                                         .filter(a => !isToday(parseISO(a.date)) && isAfter(parseISO(a.date), new Date()))
                                         .sort((a, b) => new Date(a.date + 'T' + a.time).getTime() - new Date(b.date + 'T' + b.time).getTime())
@@ -361,7 +220,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                                             return (
                                                 <div key={apt.id} className="flex items-center justify-between pb-2 border-b last:border-0 last:pb-0 p-2 -mx-2 rounded hover:bg-gray-50 transition-colors">
                                                     <div className="flex items-start gap-2.5 min-w-0 flex-1">
-                                                        <div className="mt-1 bg-blue-50 p-1 rounded-full text-blue-600 shrink-0">
+                                                        <div className="mt-1 bg-sky-50 p-1 rounded-full text-sky-600 shrink-0">
                                                             <Clock className="w-2.5 h-2.5" />
                                                         </div>
                                                         <div className="min-w-0 flex-1">
@@ -371,142 +230,13 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                                                             </p>
                                                         </div>
                                                     </div>
-                                                    <Dialog onOpenChange={(open) => !open && cancelEditing()}>
-                                                        {!isAppointmentPast(apt.date, apt.time) ? (
-                                                            <DialogTrigger asChild>
-                                                                <Button size="sm" className="h-6 text-[10px] px-2 bg-[#1c334a] text-white hover:bg-[#152738]">
-                                                                    Modificar
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                        ) : (
-                                                            <DialogTrigger asChild>
-                                                                <Button size="sm" variant="outline" className="h-6 text-[10px] px-2 text-gray-500">
-                                                                    Ver Detalle
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                        )}
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>
-                                                                    {isEditing ? 'Reprogramar Cita' : 'Detalles de la Cita'}
-                                                                </DialogTitle>
-                                                            </DialogHeader>
-
-                                                            {isEditing && selectedAppointmentId === apt.id ? (
-                                                                <div className="space-y-4 py-2">
-                                                                    <div className="grid gap-2">
-                                                                        <Label>Nueva Fecha</Label>
-                                                                        <Input
-                                                                            type="date"
-                                                                            value={editDate}
-                                                                            onChange={(e) => setEditDate(e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="grid gap-2">
-                                                                        <Label>Nuevo Horario</Label>
-                                                                        <select
-                                                                            className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                                                            value={editTime}
-                                                                            onChange={(e) => setEditTime(e.target.value)}
-                                                                        >
-                                                                            <option value="" disabled>Seleccionar hora</option>
-                                                                            {getAvailableSlots(editDate, apt.hospitalId).map(slot => (
-                                                                                <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                                                            ))}
-                                                                            <option value={apt.time}>{formatTime(apt.time)} (Actual)</option>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div className="flex justify-end gap-2 pt-2">
-                                                                        <Button variant="outline" size="sm" onClick={cancelEditing}>Cancelar</Button>
-                                                                        <Button size="sm" onClick={saveReschedule} className="bg-[#1c334a]">
-                                                                            <Check className="w-4 h-4 mr-2" /> Guardar Cambios
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="grid gap-4 py-4">
-                                                                    <div className="flex items-center gap-3 bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-2">
-                                                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                                                            <Building2 className="w-4 h-4" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className="text-xs text-gray-500 block">Sede</span>
-                                                                            <span className="text-sm font-semibold text-[#1c334a]">
-                                                                                {hospitals.find(h => h.id === apt.hospitalId)?.name}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                                                            <User className="w-5 h-5" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <div className="font-bold text-lg">{patient?.name}</div>
-                                                                            <div className="text-sm text-gray-500">{patient?.email}</div>
-                                                                            <div className="text-sm text-gray-500">{patient?.phone}</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="grid grid-cols-2 gap-4 text-sm mt-2">
-                                                                        <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                                            <Calendar className="w-4 h-4 text-[#1c334a]" />
-                                                                            <div>
-                                                                                <span className="block text-xs text-gray-400">Fecha</span>
-                                                                                {format(parseISO(apt.date), "PPP", { locale: es })}
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                                            <Clock className="w-4 h-4 text-[#1c334a]" />
-                                                                            <div>
-                                                                                <span className="block text-xs text-gray-400">Hora</span>
-                                                                                {formatTime(apt.time)}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="bg-gray-50 p-3 rounded-md text-sm">
-                                                                        <span className="font-semibold text-gray-700 block mb-1">Motivo:</span>
-                                                                        {apt.reason === 'specific-service' ? apt.serviceName : (
-                                                                            apt.reason === 'first-visit' ? 'Primera vez' :
-                                                                                apt.reason === 'follow-up' ? 'Seguimiento' :
-                                                                                    apt.reason
-                                                                        )}
-                                                                    </div>
-                                                                    {apt.specificService && (
-                                                                        <div className="bg-yellow-50 p-3 rounded-md text-sm border border-yellow-100">
-                                                                            <span className="font-semibold text-yellow-800 block mb-1">Detalles:</span>
-                                                                            {apt.specificService}
-                                                                        </div>
-                                                                    )}
-
-                                                                    {isAppointmentPast(apt.date, apt.time) ? (
-                                                                        <div className="text-center p-2 text-xs text-gray-400 bg-gray-50 rounded-md border border-gray-100 mt-2">
-                                                                            Esta cita ya finalizó y no puede modificarse.
-                                                                        </div>
-                                                                    ) : (
-                                                                        <>
-                                                                            {apt.reason !== 'blocked' && (
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    className="w-full mt-2 border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                                                    onClick={() => startEditing(apt)}
-                                                                                >
-                                                                                    <Edit2 className="w-4 h-4 mr-2" /> Reprogramar Cita
-                                                                                </Button>
-                                                                            )}
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                className="w-full mt-2 border-red-200 text-red-600 hover:bg-red-50"
-                                                                                onClick={() => setApptToDelete(apt.id)}
-                                                                            >
-                                                                                <Trash2 className="w-4 h-4 mr-2" /> Eliminar Cita
-                                                                            </Button>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </DialogContent>
-                                                    </Dialog>
+                                                    <Button 
+                                                        size="sm" 
+                                                        onClick={() => setSelectedDetailApt(apt)}
+                                                        className="h-8 text-[10px] px-3 bg-[#1e293b] text-white hover:bg-[#0f172a] rounded-lg shadow-md shadow-slate-50 font-semibold transition-all active:scale-95"
+                                                    >
+                                                        DETALLE
+                                                    </Button>
                                                 </div>
                                             )
                                         })
@@ -519,12 +249,12 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                         </Card>
 
                         {/* Consolidated Hospital Stats */}
-                        <Card className="shadow-sm">
-                            <CardHeader className="p-4 pb-2">
-                                <CardTitle className="text-sm">Estado de Sedes</CardTitle>
+                        <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white overflow-hidden">
+                            <CardHeader className="p-6 pb-2">
+                                <CardTitle className="text-lg font-extrabold text-[#0f172a]">Estado de Sedes</CardTitle>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                                <div className="space-y-3">
+                            <CardContent className="p-6 pt-0">
+                                <div className="space-y-4">
                                     {hospitals.map(hospital => {
                                         const hospitalAppts = appointments.filter(a => a.hospitalId === hospital.id);
                                         // const hospitalPatients = new Set(hospitalAppts.map(a => a.patientId)).size;
@@ -555,26 +285,16 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                 </div>
             </div>
 
-            <ConfirmDialog
-                open={!!apptToDelete}
-                onOpenChange={(open) => !open && setApptToDelete(null)}
-                title="¿Eliminar Cita?"
-                description="Esta acción eliminará permanentemente la cita. No se puede deshacer."
-                confirmText="Eliminar Cita"
-                isLoading={isDeletingAppt}
-                onConfirm={async () => {
-                    if (!apptToDelete) return;
-                    setIsDeletingAppt(true);
-                    try {
-                        await deleteAppointment(apptToDelete);
-                        toast.success('Cita eliminada correctamente');
-                        setApptToDelete(null);
-                    } catch {
-                        toast.error('Error al eliminar la cita');
-                    } finally {
-                        setIsDeletingAppt(false);
-                    }
-                }}
+
+            <AppointmentDetailDialog
+                appointment={selectedDetailApt}
+                patient={patients.find(p => p.id === selectedDetailApt?.patientId)}
+                hospitals={hospitals}
+                isOpen={!!selectedDetailApt}
+                onOpenChange={(open) => !open && setSelectedDetailApt(null)}
+                onDelete={handleDeleteAppointment}
+                onUpdate={handleUpdateAppointment}
+                getAvailableSlots={getAvailableSlots}
             />
         </>
     );

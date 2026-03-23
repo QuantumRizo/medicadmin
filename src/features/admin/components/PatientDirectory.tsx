@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { format, isAfter, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Search, MapPin, Phone, Mail, Trash2, Calendar, ArrowRight, User, FileText, UserPlus, CalendarPlus } from 'lucide-react';
+import { Search, MapPin, Phone, Mail, Trash2, Calendar, ArrowRight, User, FileText, CalendarPlus } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
@@ -155,14 +155,14 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-start items-start md:items-center gap-4">
                 {/* Search with Autocomplete */}
-                <div className="relative z-30 w-full md:w-[300px]">
-                    <div className="flex items-center gap-2 bg-white p-1 rounded-lg border shadow-sm">
-                        <Search className="w-4 h-4 ml-2 text-gray-400" />
+                <div className="relative z-30 w-full md:w-[400px]">
+                    <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm focus-within:ring-2 focus-within:ring-sky-500 transition-all">
+                        <Search className="w-5 h-5 ml-3 text-slate-400" />
                         <Input
-                            placeholder="Buscar paciente..."
-                            className="border-none shadow-none focus-visible:ring-0 flex-1"
+                            placeholder="Buscar paciente por nombre o email..."
+                            className="border-none shadow-none focus-visible:ring-0 flex-1 h-10 text-sm font-medium"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -170,7 +170,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
 
                     {/* Autocomplete Dropdown */}
                     {globalSuggestions.length > 0 && searchTerm.length >= 2 && (
-                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden max-h-[300px] overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-gray-100 overflow-hidden max-h-[300px] overflow-y-auto z-40">
                             <div className="px-3 py-2 text-xs font-semibold text-gray-400 bg-gray-50 border-b">
                                 Sugerencias Globales
                             </div>
@@ -193,33 +193,28 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                         </div>
                     )}
                 </div>
-                <Button
-                    className="bg-[#1c334a] hover:bg-[#2a4560] shadow-sm ml-auto md:ml-2 w-full md:w-auto mt-2 md:mt-0"
-                    onClick={() => setIsAddDialogOpen(true)}
-                >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Nuevo Paciente
-                </Button>
             </div>
 
             {/* PATIENTS TABLE */}
-            <Card className="shadow-lg border-t-4 border-t-[#1c334a]">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <User className="w-5 h-5" />
-                        Directorio de Pacientes
-                        <div className="flex items-center gap-4">
+            <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white overflow-hidden">
+                <CardHeader className="p-6 pb-2 border-b border-slate-50 bg-slate-50/30">
+                    <CardTitle className="text-xl font-extrabold text-[#0f172a] flex flex-wrap items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-sky-50 flex items-center justify-center text-sky-500">
+                            <User className="w-6 h-6" />
+                        </div>
+                        <span className="flex-1">Directorio de Pacientes</span>
+                        <div className="flex items-center gap-3">
                             <select
-                                className="h-9 rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                className="h-10 rounded-xl border border-slate-200 bg-white px-4 py-1 text-sm shadow-sm transition-all focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer font-medium"
                                 value={selectedHospitalFilter}
                                 onChange={(e) => setSelectedHospitalFilter(e.target.value)}
                             >
-                                <option value="all">Todos los Hospitales</option>
+                                <option value="all">Filtro: Todos los Hospitales</option>
                                 {hospitals.map(h => (
                                     <option key={h.id} value={h.id}>{h.name}</option>
                                 ))}
                             </select>
-                            <Badge variant="secondary">{filteredPatients.length}</Badge>
+                            <Badge variant="secondary" className="bg-sky-100 text-sky-700 hover:bg-sky-100 rounded-lg px-3 py-1 text-sm font-bold border-none">{filteredPatients.length}</Badge>
                         </div>
                     </CardTitle>
                 </CardHeader>
@@ -271,10 +266,10 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                             <div className="hidden md:block overflow-x-auto">
                                 <Table>
                                     <TableHeader>
-                                        <TableRow className="bg-gray-50/50">
-                                            <TableHead className="min-w-[200px]">Paciente</TableHead>
-                                            <TableHead className="hidden md:table-cell">Contacto</TableHead>
-                                            <TableHead className="text-right min-w-[150px]">Acciones</TableHead>
+                                        <TableRow className="bg-slate-50 hover:bg-slate-50">
+                                            <TableHead className="py-4 text-xs font-bold text-slate-500 uppercase tracking-widest pl-6">Paciente</TableHead>
+                                            <TableHead className="hidden md:table-cell py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Contacto</TableHead>
+                                            <TableHead className="text-right py-4 text-xs font-bold text-slate-500 uppercase tracking-widest pr-6">Acciones</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -300,11 +295,11 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                                         </div>
                                                     </TableCell>
 
-                                                    <TableCell className="text-right">
-                                                        <div className="flex items-center justify-end gap-2">
+                                                    <TableCell className="text-right pr-6">
+                                                        <div className="flex items-center justify-end gap-3">
                                                             <Button
                                                                 size="sm"
-                                                                className="bg-[#1c334a] hover:bg-[#2a4560] text-white shadow-sm"
+                                                                className="bg-[#1c334a] hover:bg-[#1e293b] text-white rounded-xl h-10 px-4 font-bold shadow-lg shadow-slate-200 transition-all active:scale-95 border-none"
                                                                 onClick={() => onBookAppointment && onBookAppointment({
                                                                     id: patient.id,
                                                                     name: patient.name,
@@ -318,7 +313,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                                             </Button>
                                                             <Button
                                                                 size="sm"
-                                                                className="bg-[#1c334a] hover:bg-[#2a4560] shadow-sm"
+                                                                className="bg-[#1e293b] hover:bg-[#0f172a] text-white rounded-xl h-10 px-4 font-bold shadow-lg shadow-slate-100 transition-all active:scale-95"
                                                                 onClick={() => handleOpenPatient(patient)}
                                                             >
                                                                 <FileText className="w-4 h-4 mr-2" />
@@ -327,7 +322,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                                             <Button
                                                                 size="sm"
                                                                 variant="destructive"
-                                                                className="bg-red-500 hover:bg-red-600 text-white shadow-sm"
+                                                                className="bg-red-500 hover:bg-red-600 text-white rounded-xl h-10 w-10 flex items-center justify-center p-0 shadow-lg shadow-red-100 transition-all active:scale-95"
                                                                 onClick={(e) => handleDeletePatient(patient.id, e)}
                                                                 title="Eliminar Paciente Completo"
                                                             >
@@ -373,7 +368,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                             <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-50">
                                                 <Button
                                                     size="sm"
-                                                    className="w-full bg-[#1c334a] hover:bg-[#2a4560] text-white shadow-sm h-10"
+                                                    className="w-full bg-[#1c334a] hover:bg-[#1e293b] text-white shadow-sm h-10 border-none transition-all active:scale-95"
                                                     onClick={() => onBookAppointment && onBookAppointment({
                                                         id: patient.id,
                                                         name: patient.name,

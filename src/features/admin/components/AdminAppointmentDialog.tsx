@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { type Hospital } from "@/features/appointments/types";
-import { ArrowLeft, Building2 } from "lucide-react";
+import { ArrowLeft, Building2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface AdminAppointmentDialogProps {
@@ -127,38 +127,47 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        {bookingHospitalId && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 mr-1" onClick={() => setBookingHospitalId(null)}>
-                                <ArrowLeft className="w-4 h-4" />
-                            </Button>
-                        )}
-                        {bookingHospitalId ? `Agendar en ${selectedHospital?.name}` : "Seleccione Hospital"}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {bookingHospitalId
-                            ? "Ingrese los datos del paciente y detalles de la cita."
-                            : "¿En qué sucursal desea agendar la nueva cita?"}
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-[600px] max-h-[95vh] overflow-y-auto rounded-2xl border-none shadow-2xl p-0">
+                <div className="bg-[#0f172a] p-6 text-white">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-3 text-xl font-bold">
+                            {bookingHospitalId && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 rounded-full" onClick={() => setBookingHospitalId(null)}>
+                                    <ArrowLeft className="w-5 h-5" />
+                                </Button>
+                            )}
+                            <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center text-sky-400">
+                                <Building2 className="w-6 h-6" />
+                            </div>
+                            {bookingHospitalId ? `Agendar en ${selectedHospital?.name}` : "Seleccione Sucursal"}
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 mt-2 font-medium">
+                            {bookingHospitalId
+                                ? "Complete los datos para confirmar la cita médica."
+                                : "¿En qué sede desea programar la atención?"}
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
+
+                <div className="p-6">
 
                 {!bookingHospitalId ? (
-                    // STEP 1: Select Hospital
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-2">
                         {hospitals.map(hospital => (
                             <button
                                 key={hospital.id}
                                 onClick={() => setBookingHospitalId(hospital.id)}
-                                className="flex items-center gap-4 p-4 rounded-lg border border-gray-200 hover:border-primary hover:bg-primary/5 transition-all text-left group"
+                                className="flex items-center gap-5 p-5 rounded-2xl border border-slate-100 hover:border-sky-500 hover:bg-sky-50/50 transition-all text-left group shadow-sm hover:shadow-md w-full"
                             >
-                                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <Building2 className="w-6 h-6" />
+                                <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-sky-500 group-hover:text-white transition-all duration-300">
+                                    <Building2 className="w-7 h-7" />
                                 </div>
-                                <div>
-                                    <h3 className="font-semibold text-gray-900 group-hover:text-primary">{hospital.name}</h3>
-                                    <p className="text-sm text-gray-500">{hospital.address}</p>
+                                <div className="flex-1">
+                                    <h3 className="font-bold text-slate-900 group-hover:text-sky-600 text-lg transition-colors">{hospital.name}</h3>
+                                    <p className="text-sm text-slate-500 font-medium">{hospital.address}</p>
+                                </div>
+                                <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-sky-100 group-hover:text-sky-600 transition-all">
+                                    <ChevronRight className="w-5 h-5" />
                                 </div>
                             </button>
                         ))}
@@ -166,37 +175,42 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                 ) : (
                     // STEP 2: Form
                     <div className="grid gap-6 py-4 animate-in slide-in-from-right-4 fade-in duration-300">
-                        {/* Section: Datos del Paciente */}
                         <div className="space-y-4">
-                            <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Datos del Paciente</h3>
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                <span className="w-8 h-[2px] bg-sky-200 rounded-full"></span>
+                                Datos del Paciente
+                            </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="admin-name">Nombre Completo *</Label>
+                                    <Label htmlFor="admin-name" className="text-slate-700 font-bold ml-1">Nombre Completo *</Label>
                                     <Input
                                         id="admin-name"
                                         value={patient.name}
                                         onChange={(e) => handlePatientChange('name', e.target.value)}
                                         placeholder="Nombre del paciente"
+                                        className="rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="admin-phone">Teléfono *</Label>
+                                    <Label htmlFor="admin-phone" className="text-slate-700 font-bold ml-1">Teléfono *</Label>
                                     <Input
                                         id="admin-phone"
                                         value={patient.phone}
                                         onChange={(e) => handlePatientChange('phone', e.target.value)}
                                         placeholder="55 1234 5678"
+                                        className="rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500"
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="admin-email">Correo Electrónico (Opcional)</Label>
+                                <Label htmlFor="admin-email" className="text-slate-700 font-bold ml-1">Correo Electrónico (Opcional)</Label>
                                 <Input
                                     id="admin-email"
                                     type="email"
                                     value={patient.email}
                                     onChange={(e) => handlePatientChange('email', e.target.value)}
                                     placeholder="correo@ejemplo.com"
+                                    className="rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500"
                                 />
                             </div>
                         </div>
@@ -207,10 +221,10 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
 
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="admin-reason">Motivo de la Cita</Label>
+                                    <Label htmlFor="admin-reason" className="text-slate-700 font-bold ml-1">Motivo de la Cita</Label>
                                     <select
                                         id="admin-reason"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                        className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm focus:ring-2 focus:ring-sky-500 transition-all outline-none font-bold text-slate-700"
                                         value={appointment.reason}
                                         onChange={(e) => handleAppointmentChange('reason', e.target.value)}
                                     >
@@ -223,12 +237,13 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
 
                                 {appointment.reason === 'specific-service' && (
                                     <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                                        <Label htmlFor="admin-service-desc">Descripción del Servicio</Label>
+                                        <Label htmlFor="admin-service-desc" className="text-slate-700 font-bold ml-1">Descripción del Servicio</Label>
                                         <Input
                                             id="admin-service-desc"
                                             value={appointment.serviceName || ''}
                                             onChange={(e) => handleAppointmentChange('serviceName', e.target.value)}
                                             placeholder="Ej: Consulta de tal, Revisión..."
+                                            className="rounded-xl border-slate-200 h-12 focus-visible:ring-sky-500 font-bold text-slate-700"
                                         />
                                     </div>
                                 )}
@@ -236,20 +251,21 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="admin-date">Fecha *</Label>
+                                    <Label htmlFor="admin-date" className="text-slate-700 font-bold ml-1">Fecha *</Label>
                                     <Input
                                         id="admin-date"
                                         type="date"
                                         value={appointment.date}
                                         min={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()}
                                         onChange={(e) => handleAppointmentChange('date', e.target.value)}
+                                        className="rounded-xl border-slate-200 h-12 focus-visible:ring-sky-500 font-bold text-slate-700"
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="admin-time">Hora *</Label>
+                                    <Label htmlFor="admin-time" className="text-slate-700 font-bold ml-1">Hora *</Label>
                                     <select
                                         id="admin-time"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                                        className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm focus:ring-2 focus:ring-sky-500 transition-all outline-none font-bold text-slate-700"
                                         value={appointment.time}
                                         onChange={(e) => handleAppointmentChange('time', e.target.value)}
                                     >
@@ -273,14 +289,15 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
 
                         </div>
 
-                        <div className="flex justify-end gap-3 pt-4">
-                            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>Cancelar</Button>
-                            <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">
+                            <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={isSubmitting} className="rounded-xl h-12 px-6 font-bold text-slate-500 hover:bg-slate-50 transition-all">Cancelar</Button>
+                            <Button onClick={handleSubmit} disabled={isSubmitting} className="bg-sky-500 hover:bg-sky-600 text-white rounded-xl h-12 px-8 font-bold shadow-xl shadow-sky-100 transition-all active:scale-95 min-w-[160px]">
                                 {isSubmitting ? "Agendando..." : "Confirmar Cita"}
                             </Button>
                         </div>
                     </div>
                 )}
+                </div>
             </DialogContent>
         </Dialog>
     );

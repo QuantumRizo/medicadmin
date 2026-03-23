@@ -1,9 +1,13 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Clock, User, Calendar, Edit2, Check, Building2, Trash2 } from 'lucide-react';
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import {
+    ChevronLeft,
+    ChevronRight,
+    Plus,
+    Clock,
+} from 'lucide-react';
 import {
     format,
     startOfMonth,
@@ -17,147 +21,80 @@ import {
     subMonths,
     parseISO,
     isToday,
-    isBefore,
-    startOfToday
+    addWeeks,
+    subWeeks
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { AppointmentDetailDialog } from './AppointmentDetailDialog';
+import type { Appointment } from '../../appointments/types';
+import { formatTime, getStatusLabel, getApptColor, getHospitalAcronym } from '../../appointments/utils';
 import { Badge } from "@/components/ui/badge";
-import { Label } from '@/components/ui/label';
-import { Input } from "@/components/ui/input";
 import { toast } from 'sonner';
-import { isAppointmentPast } from '@/lib/dateUtils';
 
-// No props needed for Global View
 interface AdminCalendarProps {
-}
-
-interface Appointment {
-    id: string;
-    date: string;
-    time: string;
-    patientId: string;
-    reason: string;
-    serviceName?: string;
-    specificService?: string;
 }
 
 export const AdminCalendar = (_props: AdminCalendarProps) => {
     const { appointments, patients, hospitals, updateAppointment, getAvailableSlots, deleteAppointment } = useAppointments();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+    const [selectedHospitalFilter, setSelectedHospitalFilter] = useState<string>('all');
+    const [view, setView] = useState<'month' | 'week'>('week');
+    const [selectedDetailApt, setSelectedDetailApt] = useState<Appointment | null>(null);
+    const [hoveredAptId, setHoveredAptId] = useState<string | null>(null);
 
-    const formatTime = (timeStr: string) => {
-        if (!timeStr) return '';
-        const [hours, minutes] = timeStr.split(':');
-        const date = new Date();
-        date.setHours(parseInt(hours, 10));
-        date.setMinutes(parseInt(minutes, 10));
-        return format(date, 'h:mm a', { locale: es });
-    };
-
-    const getHospitalAcronym = (name?: string) => {
-        if (!name) return '';
-        const words = name.trim().split(/\s+/).filter(w => w.length > 0 && w.toLowerCase() !== 'de' && w.toLowerCase() !== 'la' && w.toLowerCase() !== 'el');
-        if (words.length > 1) {
-            return words.map(w => w[0]).join('').substring(0, 3).toUpperCase();
-        }
-        return name.substring(0, 3).toUpperCase();
-    };
-
-    // Delete confirmation state
-    const [appointmentToDelete, setAppointmentToDelete] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
-
-    const [isEditing, setIsEditing] = useState(false);
-    const [editDate, setEditDate] = useState("");
-    const [editTime, setEditTime] = useState("");
-    const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-
-    // For opening appointment detail from the day-view dialog
-    const [selectedDetailApt, setSelectedDetailApt] = useState<typeof appointments[0] | null>(null);
-
-    // Calendar generation
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
     const startDate = startOfWeek(monthStart, { locale: es, weekStartsOn: 0 });
     const endDate = endOfWeek(monthEnd, { locale: es, weekStartsOn: 0 });
-
     const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
-
-    const weekDays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
-    const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
-    const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
-    const goToToday = () => setCurrentDate(new Date());
-
-    // Appointments for selected hospital
+ 
+    const weekStart = startOfWeek(currentDate, { locale: es, weekStartsOn: 1 });
+    const weekEnd = endOfWeek(weekStart, { locale: es, weekStartsOn: 1 });
+    const currentWeekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+ 
+    const weekDaysShort = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+ 
+    const nextPeriod = () => {
+        if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
+        else setCurrentDate(addWeeks(currentDate, 1));
+    };
+ 
+    const prevPeriod = () => {
+        if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
+        else setCurrentDate(subWeeks(currentDate, 1));
+    };
+ 
     const getDayAppointments = (day: Date) => {
-        return appointments.filter(a =>
-            isSameDay(parseISO(a.date), day)
-        ).sort((a, b) => a.time.localeCompare(b.time));
+        return appointments.filter(a => {
+            const matchesDay = isSameDay(parseISO(a.date), day);
+            const matchesHospital = selectedHospitalFilter === 'all' || a.hospitalId === selectedHospitalFilter;
+            return matchesDay && matchesHospital;
+        }).sort((a, b) => a.time.localeCompare(b.time));
     };
 
-
-    const handleDeleteAppointment = (apptId: string) => {
-        setAppointmentToDelete(apptId);
-    };
-
-    const confirmDeleteAppointment = async () => {
-        if (!appointmentToDelete) return;
-        setIsDeleting(true);
+    const handleDeleteAppointment = async (apptId: string) => {
         try {
-            await deleteAppointment(appointmentToDelete);
+            await deleteAppointment(apptId);
             toast.success('Cita eliminada correctamente');
-            setAppointmentToDelete(null);
+            setSelectedDetailApt(null);
         } catch (e) {
             toast.error('Error al eliminar la cita');
-        } finally {
-            setIsDeleting(false);
         }
     };
 
-    const startEditing = (appt: Appointment) => {
-        setIsEditing(true);
-        setEditDate(appt.date);
-        setEditTime(appt.time);
-        setSelectedAppointmentId(appt.id);
-    };
-
-    const cancelEditing = () => {
-        setIsEditing(false);
-        setSelectedAppointmentId(null);
-    };
-
-    const saveReschedule = async () => {
-        if (!selectedAppointmentId || !editDate || !editTime) return;
-
+    const handleUpdateAppointment = async (apptId: string, updates: Partial<Appointment>) => {
         try {
-            await updateAppointment(selectedAppointmentId, {
-                date: editDate,
-                time: editTime
-            });
-            toast.success('Cita reprogramada correctamente');
-            setIsEditing(false);
-            setSelectedAppointmentId(null);
+            await updateAppointment(apptId, updates);
+            toast.success('Cita actualizada correctamente');
         } catch (e: any) {
-            toast.error('Error al reprogramar cita', { description: e.message });
+            toast.error('Error al actualizar cita', { description: e.message });
+            throw e;
         }
     };
 
-    const getStatusColor = (reason: string) => {
-        switch (reason) {
-            case 'blocked': return 'bg-gray-100 text-gray-600 border-gray-500';
-            default: return 'bg-green-100 text-green-800 border-green-500';
-        }
-    };
-
-    const getStatusLabel = (reason: string) => {
-        switch (reason) {
-            case 'blocked': return 'Bloqueado';
-            default: return 'Confirmada';
-        }
-    };
+    const hours = Array.from({ length: 13 }, (_, i) => i + 8);
 
     return (
         <Card className="h-full border-none shadow-none md:border md:shadow-sm">
@@ -166,267 +103,279 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                     {format(currentDate, 'MMMM yyyy', { locale: es })}
                 </CardTitle>
 
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={goToToday}>Hoy</Button>
-                    <div className="flex items-center border rounded-md">
-                        <Button variant="ghost" size="icon" onClick={prevMonth} className="h-8 w-8">
-                            <ChevronLeft className="h-4 w-4" />
+                <div className="flex flex-wrap items-center gap-3">
+                    <select
+                        className="h-11 rounded-xl border border-slate-200 bg-white px-4 py-1 text-sm shadow-sm transition-all focus:ring-2 focus:ring-sky-500 outline-none appearance-none cursor-pointer font-medium min-w-[180px]"
+                        value={selectedHospitalFilter}
+                        onChange={(e) => setSelectedHospitalFilter(e.target.value)}
+                    >
+                        <option value="all">Sede: Todas las Sedes</option>
+                        {hospitals.map(h => (
+                            <option key={h.id} value={h.id}>{h.name}</option>
+                        ))}
+                    </select>
+
+                    <div className="flex items-center border border-slate-200 rounded-xl bg-slate-50 p-1 shadow-sm h-11">
+                        <Button
+                            variant={view === 'week' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('week')}
+                            className={`rounded-lg h-9 px-4 font-bold transition-all ${view === 'week' ? 'bg-[#1e293b] text-white shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-white'}`}
+                        >
+                            Semana
                         </Button>
-                        <div className="w-px h-4 bg-gray-200"></div>
-                        <Button variant="ghost" size="icon" onClick={nextMonth} className="h-8 w-8">
-                            <ChevronRight className="h-4 w-4" />
+                        <Button
+                            variant={view === 'month' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('month')}
+                            className={`rounded-lg h-9 px-4 font-bold transition-all ${view === 'month' ? 'bg-[#1e293b] text-white shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-white'}`}
+                        >
+                            Mes
+                        </Button>
+                    </div>
+
+                    <div className="flex items-center border border-slate-200 rounded-xl bg-white overflow-hidden shadow-sm h-11">
+                        <Button variant="ghost" size="icon" onClick={prevPeriod} className="h-full w-10 hover:bg-slate-50 transition-colors border-r border-slate-100 rounded-none">
+                            <ChevronLeft className="h-5 w-5 text-slate-600" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={nextPeriod} className="h-full w-10 hover:bg-slate-50 transition-colors rounded-none">
+                            <ChevronRight className="h-5 w-5 text-slate-600" />
                         </Button>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="p-0 md:p-6">
-
-                {/* Desktop Calendar Grid */}
-                <div className="hidden md:block border rounded-lg overflow-hidden">
-                    {/* Header Row */}
-                    <div className="grid grid-cols-7 bg-gray-50 border-b">
-                        {weekDays.map(day => (
-                            <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                                {day}
+            <CardContent className="p-0">
+                <div className="hidden md:block">
+                    {view === 'month' ? (
+                        <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white mx-6 mb-6 shadow-xl shadow-slate-200/50">
+                            <div className="grid grid-cols-7 bg-slate-50/50 border-b border-slate-100">
+                                {weekDaysShort.map(day => (
+                                    <div key={day} className="py-3 text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
+                                        {day}
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
+                            <div className="grid grid-cols-7 auto-rows-[120px]">
+                                {calendarDays.map((day, idx) => {
+                                    const dayAppts = getDayAppointments(day);
+                                    const isCurrentMonth = isSameMonth(day, monthStart);
+                                    return (
+                                        <div
+                                            key={day.toISOString()}
+                                            className={`
+                                                border-b border-r border-slate-50 p-2 transition-all hover:bg-slate-50/50 flex flex-col gap-1 relative overflow-hidden group
+                                                ${!isCurrentMonth ? 'bg-slate-50/30 text-slate-300' : 'bg-white'}
+                                                ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}
+                                                ${isToday(day) ? 'bg-sky-50/50' : ''}
+                                            `}
+                                        >
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className={`
+                                                    text-xs font-bold h-7 w-7 flex items-center justify-center rounded-xl transition-all
+                                                    ${isToday(day) ? 'bg-[#1c334a] text-white shadow-lg shadow-blue-900/20' : 'text-slate-600 group-hover:bg-slate-100'}
+                                                `}>
+                                                    {format(day, 'd')}
+                                                </span>
+                                            </div>
 
-                    {/* Days Grid */}
-                    <div className="grid grid-cols-7 auto-rows-[120px]">
-                        {calendarDays.map((day, idx) => {
-                            const dayAppts = getDayAppointments(day);
-                            const isCurrentMonth = isSameMonth(day, monthStart);
-
-                            return (
-                                <div
-                                    key={day.toISOString()}
-                                    className={`
-                                        border-b border-r p-2 transition-colors hover:bg-gray-50/50 flex flex-col gap-1 relative overflow-hidden
-                                        ${!isCurrentMonth ? 'bg-gray-50/30 text-gray-400' : 'bg-white'}
-                                        ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}
-                                        ${isToday(day) ? 'bg-blue-50/30' : ''}
-                                    `}
-                                >
-                                    <div className="flex justify-between items-start">
-                                        <span className={`
-                                            text-sm font-medium h-7 w-7 flex items-center justify-center rounded-full
-                                            ${isToday(day) ? 'bg-[#1c334a] text-white' : ''}
-                                        `}>
+                                            <div className="flex flex-col gap-0.5 overflow-hidden flex-1 pb-6">
+                                                {dayAppts.slice(0, 2).map(apt => {
+                                                    const patient = patients.find(p => p.id === apt.patientId);
+                                                    const color = getApptColor(apt.reason);
+                                                    return (
+                                                        <div
+                                                            key={apt.id}
+                                                            className={`text-[9px] px-1.5 py-0.5 rounded-md border font-normal truncate cursor-pointer transition-all hover:translate-x-0.5 ${color.bg} ${color.border} ${color.text}`}
+                                                            onClick={() => setSelectedDetailApt(apt)}
+                                                        >
+                                                            <span className="font-extrabold mr-1">{formatTime(apt.time).split(' ')[0]}</span>
+                                                            {patient?.name.split(' ')[0]}
+                                                        </div>
+                                                    );
+                                                })}
+                                                {dayAppts.length > 2 && (
+                                                    <div className="text-[9px] text-slate-400 font-bold pl-1 pt-0.5">
+                                                        +{dayAppts.length - 2} más
+                                                    </div>
+                                                )}
+                                            </div>
+                                            
+                                            {dayAppts.length > 2 && (
+                                                <button 
+                                                    className="absolute bottom-2 right-2 w-6 h-6 rounded-lg bg-[#1c334a] text-white text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg"
+                                                    onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}
+                                                >
+                                                    <Plus className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="border border-slate-100 rounded-2xl overflow-hidden bg-white mx-6 mb-6 shadow-xl shadow-slate-200/50 flex flex-col">
+                            <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-slate-100 bg-slate-50/50 sticky top-0 z-20">
+                                <div className="py-4 border-r border-slate-100 flex items-center justify-center">
+                                    <Clock className="w-5 h-5 text-slate-300" />
+                                </div>
+                                {currentWeekDays.map((day, idx) => (
+                                    <div key={idx} className={`py-4 px-2 border-r last:border-r-0 border-slate-100 flex flex-col items-center gap-1.5 ${isToday(day) ? 'bg-sky-50/50' : ''}`}>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{weekDaysShort[idx]}</span>
+                                        <span className={`text-sm font-extrabold w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isToday(day) ? 'bg-[#1c334a] text-white shadow-lg shadow-blue-900/20' : 'text-slate-600 bg-slate-100/50 font-black'}`}>
                                             {format(day, 'd')}
                                         </span>
-                                        {dayAppts.length > 0 && (
-                                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                                                {dayAppts.length}
-                                            </Badge>
-                                        )}
                                     </div>
+                                ))}
+                            </div>
 
-                                    <div className="flex flex-col gap-1 mt-1 overflow-y-auto max-h-full no-scrollbar">
-                                        {dayAppts.slice(0, 3).map(apt => {
-                                            const patient = patients.find(p => p.id === apt.patientId);
-                                            return (
-                                                <Dialog key={apt.id} onOpenChange={(open) => !open && cancelEditing()}>
-                                                    <DialogTrigger asChild>
-                                                        <button
-                                                            className={`
-                                                                text-[10px] text-left px-1.5 py-1 rounded w-full border-l-2 font-medium transition-all hover:brightness-95
-                                                                ${getStatusColor(apt.reason)}
-                                                                ${isBefore(parseISO(apt.date), startOfToday()) ? 'opacity-50 grayscale' : ''}
-                                                            `}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            <div className="flex items-center gap-1 flex-wrap">
-                                                                <span className="text-[9px] font-bold bg-[#1c334a]/10 text-[#1c334a] px-1 rounded uppercase shrink-0">
-                                                                    {getHospitalAcronym(hospitals.find(h => h.id === apt.hospitalId)?.name)}
-                                                                </span>
-                                                                <span className="line-clamp-1 break-all">{formatTime(apt.time)} - {patient?.name.split(' ')[0] || 'Cita'}</span>
-                                                            </div>
-                                                        </button>
-                                                    </DialogTrigger>
-                                                    <DialogContent>
-                                                        <DialogHeader>
-                                                            <DialogTitle>
-                                                                {isEditing ? 'Reprogramar Cita' : 'Detalles de la Cita'}
-                                                            </DialogTitle>
-                                                        </DialogHeader>
-
-                                                        {isEditing && selectedAppointmentId === apt.id ? (
-                                                            <div className="space-y-4 py-2">
-                                                                <div className="grid gap-2">
-                                                                    <Label>Nueva Fecha</Label>
-                                                                    <Input
-                                                                        type="date"
-                                                                        value={editDate}
-                                                                        min={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()}
-                                                                        onChange={(e) => setEditDate(e.target.value)}
-                                                                    />
-                                                                </div>
-                                                                <div className="grid gap-2">
-                                                                    <Label>Nuevo Horario</Label>
-                                                                    <select
-                                                                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                                                        value={editTime}
-                                                                        onChange={(e) => setEditTime(e.target.value)}
-                                                                    >
-                                                                        <option value="" disabled>Seleccionar hora</option>
-                                                                        {getAvailableSlots(editDate, apt.hospitalId).map(slot => (
-                                                                            <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                                                        ))}
-                                                                        <option value={apt.time}>{formatTime(apt.time)} (Actual)</option>
-                                                                    </select>
-                                                                </div>
-                                                                <div className="flex justify-end gap-2 pt-2">
-                                                                    <Button variant="outline" size="sm" onClick={cancelEditing}>Cancelar</Button>
-                                                                    <Button size="sm" onClick={saveReschedule} className="bg-[#1c334a]">
-                                                                        <Check className="w-4 h-4 mr-2" /> Guardar Cambios
-                                                                    </Button>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="grid gap-4 py-4">
-
-                                                                <div className="flex items-center gap-3 bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-2">
-                                                                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                                                        <Building2 className="w-4 h-4" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <span className="text-xs text-gray-500 block">Sede</span>
-                                                                        <span className="text-sm font-semibold text-[#1c334a]">
-                                                                            {hospitals.find(h => h.id === apt.hospitalId)?.name}
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="flex items-center gap-3">
-                                                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                                                        <User className="w-5 h-5" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <div className="font-bold text-lg">{patient?.name}</div>
-                                                                        <div className="text-sm text-gray-500">{patient?.email}</div>
-                                                                        <div className="text-sm text-gray-500">{patient?.phone}</div>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="grid grid-cols-2 gap-4 text-sm mt-2">
-                                                                    <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                                        <Calendar className="w-4 h-4 text-[#1c334a]" />
-                                                                        <div>
-                                                                            <span className="block text-xs text-gray-400">Fecha</span>
-                                                                            {format(parseISO(apt.date), "PPP", { locale: es })}
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                                        <Clock className="w-4 h-4 text-[#1c334a]" />
-                                                                        <div>
-                                                                            <span className="block text-xs text-gray-400">Hora</span>
-                                                                            {formatTime(apt.time)}
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="bg-gray-50 p-3 rounded-md text-sm">
-                                                                    <span className="font-semibold text-gray-700 block mb-1">Motivo:</span>
-                                                                    {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : apt.reason === 'follow-up' ? 'Seguimiento' : apt.reason)}
-                                                                </div>
-                                                                {apt.specificService && (
-                                                                    <div className="bg-yellow-50 p-3 rounded-md text-sm border border-yellow-100">
-                                                                        <span className="font-semibold text-yellow-800 block mb-1">Detalles:</span>
-                                                                        {apt.specificService}
-                                                                    </div>
-                                                                )}
-
-                                                                {isAppointmentPast(apt.date, apt.time) ? (
-                                                                    <div className="text-center p-2 text-xs text-gray-400 bg-gray-50 rounded-md border border-gray-100 mt-2">
-                                                                        Esta cita ya finalizó y no puede modificarse.
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        {/* Edit Button */}
-                                                                        {apt.reason !== 'blocked' && (
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                className="w-full mt-2 border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                                                onClick={() => startEditing(apt)}
-                                                                            >
-                                                                                <Edit2 className="w-4 h-4 mr-2" /> Reprogramar Cita
-                                                                            </Button>
-                                                                        )}
-                                                                        <Button
-                                                                            variant="outline"
-                                                                            className="w-full mt-2 border-red-200 text-red-600 hover:bg-red-50"
-                                                                            onClick={() => handleDeleteAppointment(apt.id)}
-                                                                        >
-                                                                            <Trash2 className="w-4 h-4 mr-2" /> Eliminar Cita
-                                                                        </Button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </DialogContent>
-                                                </Dialog>
-                                            );
-                                        })}
-                                    </div>
-                                    {dayAppts.length > 3 && (
-                                        <button
-                                            className="absolute bottom-1 right-1 w-6 h-6 flex items-center justify-center rounded-full bg-[#1c334a] text-white text-[10px] font-bold shadow-md hover:bg-[#152738] transition-all z-10"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setSelectedDay(day);
-                                            }}
-                                        >
-                                            +{dayAppts.length - 3}
-                                        </button>
-                                    )}
+                            <div className="relative overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 400px)' }}>
+                                <div className="grid grid-cols-[80px_repeat(7,1fr)] auto-rows-[100px]">
+                                    {hours.map(hour => (
+                                        <React.Fragment key={hour}>
+                                            <div className="border-r border-b border-slate-100 p-2 flex justify-center items-start pt-4 bg-slate-50/20">
+                                                <span className="text-[10px] font-black text-slate-400">
+                                                    {hour < 12 ? `${hour}:00 AM` : (hour === 12 ? '12:00 PM' : `${hour - 12}:00 PM`)}
+                                                </span>
+                                            </div>
+                                            {currentWeekDays.map((day, dayIdx) => (
+                                                <div key={dayIdx} className={`border-r last:border-r-0 border-b border-slate-50 relative ${isToday(day) ? 'bg-blue-50/10' : ''}`} />
+                                            ))}
+                                        </React.Fragment>
+                                    ))}
                                 </div>
-                            );
-                        })}
-                    </div>
+
+                                <div className="absolute inset-0 pointer-events-none grid grid-cols-[80px_repeat(7,1fr)]">
+                                    <div />
+                                    {currentWeekDays.map((day, dayIdx) => {
+                                        const dayAppts = getDayAppointments(day);
+                                        return (
+                                            <div key={dayIdx} className="relative h-full pointer-events-auto border-r last:border-r-0 border-slate-100/30">
+                                                {dayAppts.map((apt, aptIdx) => {
+                                                    const [h, m] = apt.time.split(':').map(Number);
+                                                    const startHour = 8;
+                                                    const hourHeight = 100;
+                                                    const top = (h - startHour) * hourHeight + (m / 60) * hourHeight;
+                                                    const height = hourHeight - 6;
+                                                    const patient = patients.find(p => p.id === apt.patientId);
+                                                    const color = getApptColor(apt.reason);
+
+                                                    return (
+                                                        <div
+                                                            key={apt.id}
+                                                            className={`absolute right-1 rounded-xl border-l-4 p-3 shadow-md shadow-slate-200/50 text-xs cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl group ${color.bg} ${color.border} ${color.text}`}
+                                                            style={{ 
+                                                                top: `${top + 3}px`, 
+                                                                height: `${height}px`, 
+                                                                zIndex: hoveredAptId === apt.id ? 100 : 10 + aptIdx,
+                                                                left: `${4 + (aptIdx * 8)}px`
+                                                            }}
+                                                            onMouseEnter={() => setHoveredAptId(apt.id)}
+                                                            onMouseLeave={() => setHoveredAptId(null)}
+                                                            onClick={() => setSelectedDetailApt(apt)}
+                                                        >
+                                                            <div className="flex flex-col h-full">
+                                                                <div className="flex items-center justify-between gap-1 mb-1.5">
+                                                                    <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider opacity-80 bg-white/40 px-1.5 py-0.5 rounded-lg">
+                                                                        <Clock className="w-2.5 h-2.5" />
+                                                                        {formatTime(apt.time)}
+                                                                    </div>
+                                                                    {apt.reason === 'blocked' && <Badge className="text-[8px] h-4 px-1 bg-slate-900/10 text-slate-900 border-none uppercase font-black">Bloq</Badge>}
+                                                                </div>
+                                                                <div className="font-black text-[11px] leading-[1.1] mb-0.5 truncate group-hover:whitespace-normal transition-all">
+                                                                    {patient?.name || 'ESPACIO BLOQUEADO'}
+                                                                </div>
+                                                                <div className="mt-auto flex items-center justify-between">
+                                                                    <span className="text-[9px] font-bold opacity-60 italic truncate">
+                                                                        {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : 'Seguimiento')}
+                                                                    </span>
+                                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-white/30 px-1.5 rounded-md">
+                                                                        {getHospitalAcronym(hospitals.find(h => h.id === apt.hospitalId)?.name)}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                {/* Dialog for Viewing All Appointments on a specific day */}
-                <Dialog open={!!selectedDay} onOpenChange={(open) => !open && setSelectedDay(null)}>
-                    <DialogContent className="sm:max-w-[425px]">
-                        <DialogHeader>
-                            <DialogTitle>
-                                Citas del {selectedDay && format(selectedDay, "d 'de' MMMM", { locale: es })}
-                            </DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-2">
-                            {selectedDay && getDayAppointments(selectedDay).map(apt => {
+                <div className="md:hidden space-y-4 px-4 pb-6">
+                    <div className="flex items-center justify-between py-2 border-b border-slate-100">
+                        <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Citas del día</span>
+                        <Badge variant="outline" className="rounded-lg bg-sky-50 text-sky-700 border-none font-black">{getDayAppointments(currentDate).length}</Badge>
+                    </div>
+                    {getDayAppointments(currentDate).length === 0 ? (
+                        <div className="py-12 flex flex-col items-center justify-center text-slate-300 gap-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                            <Plus className="w-10 h-10 opacity-20" />
+                            <p className="text-sm font-medium">No hay citas para hoy</p>
+                        </div>
+                    ) : (
+                        <div className="grid gap-3">
+                            {getDayAppointments(currentDate).sort((a,b) => a.time.localeCompare(b.time)).map(apt => {
                                 const patient = patients.find(p => p.id === apt.patientId);
+                                const color = getApptColor(apt.reason);
+                                return (
+                                    <div 
+                                        key={apt.id} 
+                                        className={`flex items-center gap-4 p-4 rounded-2xl border border-slate-100 shadow-sm transition-all active:scale-[0.98] bg-white`}
+                                        onClick={() => setSelectedDetailApt(apt)}
+                                    >
+                                        <div className={`flex flex-col items-center justify-center w-14 h-14 rounded-xl border shrink-0 ${color.bg} ${color.border} ${color.text}`}>
+                                            <span className="text-sm font-black">{formatTime(apt.time).split(' ')[0]}</span>
+                                            <span className="text-[9px] font-bold uppercase opacity-70">{formatTime(apt.time).split(' ')[1]}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <h4 className="font-extrabold text-slate-900 truncate">{patient?.name || 'Bloqueo'}</h4>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <Badge variant="secondary" className="text-[9px] h-4 rounded-md bg-slate-100 text-slate-600 border-none">{hospitals.find(h => h.id === apt.hospitalId)?.name}</Badge>
+                                                <span className="text-[10px] text-slate-400 font-medium truncate italic">{apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? '1ra vez' : 'Seg.')}</span>
+                                            </div>
+                                        </div>
+                                        <ChevronRight className="w-5 h-5 text-slate-300 shrink-0" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <Dialog open={!!selectedDay} onOpenChange={(open) => !open && setSelectedDay(null)}>
+                    <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none rounded-3xl shadow-2xl">
+                        <div className="p-8 bg-[#1c334a] text-white">
+                            <h2 className="text-2xl font-black uppercase tracking-tight">Citas del día</h2>
+                            <p className="text-sky-300 font-bold opacity-80 mt-1">{selectedDay && format(selectedDay!, "PPPP", { locale: es })}</p>
+                        </div>
+                        <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50">
+                            {selectedDay && getDayAppointments(selectedDay!).sort((a,b) => a.time.localeCompare(b.time)).map(apt => {
+                                const patient = patients.find(p => p.id === apt.patientId);
+                                const color = getApptColor(apt.reason);
                                 return (
                                     <div
                                         key={apt.id}
-                                        className={`p-3 flex gap-3 items-center hover:bg-gray-50 transition-colors cursor-pointer border rounded-lg active:bg-gray-100 ${isBefore(parseISO(apt.date), startOfToday()) ? 'opacity-60 grayscale' : ''}`}
+                                        className="p-4 flex gap-4 items-center bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer group"
                                         onClick={() => {
                                             setSelectedDay(null);
-                                            setTimeout(() => setSelectedDetailApt(apt), 150);
+                                            setTimeout(() => setSelectedDetailApt(apt), 200);
                                         }}
                                     >
-                                        <div className="flex flex-col items-center justify-center min-w-[3.5rem] py-1 bg-gray-100 rounded text-gray-700 font-bold text-sm">
-                                            {formatTime(apt.time).split(' ')[0]}
-                                            <span className="text-[10px] font-normal text-gray-500">{formatTime(apt.time).split(' ')[1]}</span>
+                                        <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center border ${color.border} ${color.bg} ${color.text}`}>
+                                            <span className="text-xs font-black">{formatTime(apt.time).split(' ')[0]}</span>
+                                            <span className="text-[8px] font-bold uppercase">{formatTime(apt.time).split(' ')[1]}</span>
                                         </div>
-
-                                        <div className="flex-1 min-w-0">
-                                            <div className="font-semibold text-gray-900 truncate flex items-center gap-2">
-                                                {patient?.name}
-                                                <Badge variant="outline" className="text-[9px] h-4 px-1 bg-blue-50 text-blue-700 border-blue-100">
-                                                    {hospitals.find(h => h.id === apt.hospitalId)?.name}
-                                                </Badge>
-                                            </div>
-                                            <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
-                                                <span className="truncate max-w-[150px]">
-                                                    {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : apt.reason === 'follow-up' ? 'Seguimiento' : apt.reason)}
-                                                </span>
-                                                <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                                <Badge variant="outline" className={`text-[9px] h-4 px-1 ${getStatusColor(apt.reason)} border-0`}>
-                                                    {getStatusLabel(apt.reason)}
-                                                </Badge>
-                                            </div>
+                                        <div className="flex-1">
+                                            <p className="font-black text-slate-900 leading-tight">{patient?.name || 'Bloqueo'}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 mt-0.5 italic">
+                                                {getStatusLabel(apt.reason)}
+                                            </p>
                                         </div>
+                                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-slate-500 transition-colors" />
                                     </div>
                                 );
                             })}
@@ -434,325 +383,17 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                     </DialogContent>
                 </Dialog>
 
-                {/* Detail Dialog — opened from day-view list */}
-                {selectedDetailApt && (() => {
-                    const apt = selectedDetailApt;
-                    const patient = patients.find(p => p.id === apt.patientId);
-                    return (
-                        <Dialog
-                            open={!!selectedDetailApt}
-                            onOpenChange={(open) => {
-                                if (!open) {
-                                    setSelectedDetailApt(null);
-                                    cancelEditing();
-                                }
-                            }}
-                        >
-                            <DialogContent className="sm:max-w-[425px]">
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        {isEditing && selectedAppointmentId === apt.id ? 'Reprogramar Cita' : 'Detalles de la Cita'}
-                                    </DialogTitle>
-                                </DialogHeader>
-
-                                {isEditing && selectedAppointmentId === apt.id ? (
-                                    <div className="space-y-4 py-2">
-                                        <div className="grid gap-2">
-                                            <Label>Nueva Fecha</Label>
-                                            <Input type="date" value={editDate} min={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()} onChange={(e) => setEditDate(e.target.value)} />
-                                        </div>
-                                        <div className="grid gap-2">
-                                            <Label>Nuevo Horario</Label>
-                                            <select
-                                                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
-                                                value={editTime}
-                                                onChange={(e) => setEditTime(e.target.value)}
-                                            >
-                                                <option value="" disabled>Seleccionar hora</option>
-                                                {getAvailableSlots(editDate, apt.hospitalId).map(slot => (
-                                                    <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                                ))}
-                                                <option value={apt.time}>{formatTime(apt.time)} (Actual)</option>
-                                            </select>
-                                        </div>
-                                        <div className="flex justify-end gap-2 pt-2">
-                                            <Button variant="outline" size="sm" onClick={cancelEditing}>Cancelar</Button>
-                                            <Button size="sm" onClick={saveReschedule} className="bg-[#1c334a]">
-                                                <Check className="w-4 h-4 mr-2" /> Guardar Cambios
-                                            </Button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="grid gap-4 py-4">
-                                        <div className="flex items-center gap-3 bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-2">
-                                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                                <Building2 className="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <span className="text-xs text-gray-500 block">Sede</span>
-                                                <span className="text-sm font-semibold text-[#1c334a]">
-                                                    {hospitals.find(h => h.id === apt.hospitalId)?.name}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                                                <User className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-lg">{patient?.name}</div>
-                                                <div className="text-sm text-gray-500">{patient?.email}</div>
-                                                <div className="text-sm text-gray-500">{patient?.phone}</div>
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4 text-sm mt-2">
-                                            <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                <Calendar className="w-4 h-4 text-[#1c334a]" />
-                                                <div>
-                                                    <span className="block text-xs text-gray-400">Fecha</span>
-                                                    {format(parseISO(apt.date), 'PPP', { locale: es })}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2 text-gray-600 bg-gray-50 p-2 rounded">
-                                                <Clock className="w-4 h-4 text-[#1c334a]" />
-                                                <div>
-                                                    <span className="block text-xs text-gray-400">Hora</span>
-                                                    {formatTime(apt.time)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="bg-gray-50 p-3 rounded-md text-sm">
-                                            <span className="font-semibold text-gray-700 block mb-1">Motivo:</span>
-                                            {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : apt.reason === 'follow-up' ? 'Seguimiento' : apt.reason)}
-                                        </div>
-                                        {apt.specificService && (
-                                            <div className="bg-yellow-50 p-3 rounded-md text-sm border border-yellow-100">
-                                                <span className="font-semibold text-yellow-800 block mb-1">Detalles:</span>
-                                                {apt.specificService}
-                                            </div>
-                                        )}
-                                        {isAppointmentPast(apt.date, apt.time) ? (
-                                            <div className="text-center p-2 text-xs text-gray-400 bg-gray-50 rounded-md border border-gray-100 mt-2">
-                                                Esta cita ya finalizó y no puede modificarse.
-                                            </div>
-                                        ) : (
-                                            <>
-                                                {apt.reason !== 'blocked' && (
-                                                    <Button
-                                                        variant="outline"
-                                                        className="w-full mt-2 border-blue-200 text-blue-700 hover:bg-blue-50"
-                                                        onClick={() => startEditing(apt)}
-                                                    >
-                                                        <Edit2 className="w-4 h-4 mr-2" /> Reprogramar Cita
-                                                    </Button>
-                                                )}
-                                                <Button
-                                                    variant="outline"
-                                                    className="w-full mt-2 border-red-200 text-red-600 hover:bg-red-50"
-                                                    onClick={() => {
-                                                        setSelectedDetailApt(null);
-                                                        handleDeleteAppointment(apt.id);
-                                                    }}
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" /> Eliminar Cita
-                                                </Button>
-                                            </>
-                                        )}
-                                    </div>
-                                )}
-                            </DialogContent>
-                        </Dialog>
-                    );
-                })()}
-
-                {/* Mobile List View */}
-                <div className="md:hidden space-y-6 pb-20">
-                    <div className="sticky top-0 bg-white/95 backdrop-blur z-30 py-3 px-1 border-b shadow-sm flex justify-between items-center">
-                        <div className="text-lg font-bold text-[#1c334a]">
-                            {format(currentDate, 'MMMM yyyy', { locale: es })}
-                        </div>
-                        <div className="text-xs text-gray-400 font-medium">
-                            {format(currentDate, 'yyyy', { locale: es })}
-                        </div>
-                    </div>
-
-                    <div className="space-y-4">
-                        {calendarDays.filter(day => isSameMonth(day, monthStart) && (getDayAppointments(day).length > 0 || isToday(day))).map(day => {
-                            const dayAppts = getDayAppointments(day);
-                            const isCurrentDay = isToday(day);
-
-                            return (
-                                <div
-                                    key={day.toISOString()}
-                                    className={`rounded-xl border shadow-sm overflow-hidden ${isCurrentDay ? 'border-blue-300 bg-blue-50/30' : 'border-gray-100 bg-white'}`}
-                                >
-                                    <div className={`px-4 py-2 border-b flex justify-between items-center ${isCurrentDay ? 'bg-blue-100/50' : 'bg-gray-50/50'}`}>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold text-gray-700 capitalize">
-                                                {format(day, "EEEE d", { locale: es })}
-                                            </span>
-                                            {isCurrentDay && (
-                                                <Badge variant="default" className="text-[10px] h-5 bg-blue-600">Hoy</Badge>
-                                            )}
-                                        </div>
-                                        <span className="text-xs text-gray-400 font-medium">{dayAppts.length} citas</span>
-                                    </div>
-
-                                    <div className="divide-y divide-gray-100">
-                                        {dayAppts.length === 0 ? (
-                                            <div className="p-6 text-center text-gray-400 italic text-sm">
-                                                No hay citas programadas para hoy.
-                                            </div>
-                                        ) : (
-                                            dayAppts.map(apt => {
-                                                const patient = patients.find(p => p.id === apt.patientId);
-                                                return (
-                                                    <Dialog key={apt.id} onOpenChange={(open) => !open && cancelEditing()}>
-                                                        <DialogTrigger asChild>
-                                                            <div className={`p-3 flex gap-3 items-center hover:bg-gray-50 transition-colors cursor-pointer active:bg-gray-100 ${isBefore(parseISO(apt.date), startOfToday()) ? 'opacity-60 grayscale' : ''}`}>
-                                                                <div className="flex flex-col items-center justify-center min-w-[3.5rem] py-1 bg-gray-100 rounded text-gray-700 font-bold text-sm">
-                                                                    {formatTime(apt.time).split(' ')[0]}
-                                                                    <span className="text-[10px] font-normal text-gray-500">{formatTime(apt.time).split(' ')[1]}</span>
-                                                                </div>
-
-                                                                <div className="flex-1 min-w-0">
-                                                                    <div className="font-semibold text-gray-900 truncate flex items-center gap-2">
-                                                                        {patient?.name}
-                                                                        <Badge variant="outline" className="text-[9px] h-4 px-1 bg-blue-50 text-blue-700 border-blue-100">
-                                                                            {hospitals.find(h => h.id === apt.hospitalId)?.name}
-                                                                        </Badge>
-                                                                    </div>
-                                                                    <div className="text-xs text-gray-500 flex items-center gap-1.5 mt-0.5">
-                                                                        <span className="truncate max-w-[150px]">
-                                                                            {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : apt.reason === 'follow-up' ? 'Seguimiento' : apt.reason)}
-                                                                        </span>
-                                                                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                                                                                <Badge variant="outline" className={`text-[9px] h-4 px-1 ${getStatusColor(apt.reason)} border-0`}>
-                                                                                    {getStatusLabel(apt.reason)}
-                                                                                </Badge>
-                                                                    </div>
-                                                                </div>
-
-                                                                <Edit2 className="w-4 h-4 text-gray-300" />
-                                                            </div>
-                                                        </DialogTrigger>
-
-                                                        {/* Reuse existing Desktop Modal Content Logic */}
-                                                        <DialogContent className="sm:max-w-[425px] max-w-[95%] rounded-lg">
-                                                            <DialogHeader>
-                                                                <DialogTitle>
-                                                                    {isEditing ? 'Reprogramar Cita' : 'Detalles de la Cita'}
-                                                                </DialogTitle>
-                                                            </DialogHeader>
-
-                                                            {isEditing && selectedAppointmentId === apt.id ? (
-                                                                <div className="space-y-4 py-2">
-                                                                    {/* ... reuse existing edit form logic ... */}
-                                                                    <div className="grid gap-2">
-                                                                        <Label>Nueva Fecha</Label>
-                                                                        <Input type="date" value={editDate} min={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()} onChange={(e) => setEditDate(e.target.value)} />
-                                                                    </div>
-                                                                    <div className="grid gap-2">
-                                                                        <Label>Nuevo Horario</Label>
-                                                                        <select
-                                                                            className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors"
-                                                                            value={editTime}
-                                                                            onChange={(e) => setEditTime(e.target.value)}
-                                                                        >
-                                                                            <option value="" disabled>Seleccionar hora</option>
-                                                                            {getAvailableSlots(editDate, apt.hospitalId).map(slot => (
-                                                                                <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                                                            ))}
-                                                                            <option value={apt.time}>{formatTime(apt.time)} (Actual)</option>
-                                                                        </select>
-                                                                    </div>
-                                                                    <div className="flex justify-end gap-2 pt-2">
-                                                                        <Button variant="outline" size="sm" onClick={cancelEditing}>Cancelar</Button>
-                                                                        <Button size="sm" onClick={saveReschedule} className="bg-[#1c334a]">
-                                                                            <Check className="w-4 h-4 mr-2" /> Guardar
-                                                                        </Button>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="grid gap-4 py-2">
-                                                                    {/* ... reuse existing view detail logic ... */}
-
-                                                                    <div className="flex items-center gap-3 bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-2">
-                                                                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                                                            <Building2 className="w-4 h-4" />
-                                                                        </div>
-                                                                        <div>
-                                                                            <span className="text-xs text-gray-500 block">Sede</span>
-                                                                            <span className="text-sm font-semibold text-[#1c334a]">
-                                                                                {hospitals.find(h => h.id === apt.hospitalId)?.name}
-                                                                            </span>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
-                                                                            <User className="w-5 h-5" />
-                                                                        </div>
-                                                                        <div className="min-w-0">
-                                                                            <div className="font-bold text-base truncate">{patient?.name}</div>
-                                                                            <div className="text-sm text-gray-500 truncate">{patient?.phone}</div>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className="bg-gray-50 p-3 rounded-md text-sm">
-                                                                        <span className="font-semibold text-gray-700 block mb-1">Motivo:</span>
-                                                                        {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : apt.reason === 'follow-up' ? 'Seguimiento' : apt.reason)}
-                                                                    </div>
-
-                                                                    {isAppointmentPast(apt.date, apt.time) ? (
-                                                                        <div className="text-center p-2 text-xs text-gray-400 bg-gray-50 rounded-md border border-gray-100 mt-2">
-                                                                            Esta cita ya finalizó y no puede modificarse.
-                                                                        </div>
-                                                                    ) : (
-                                                                        <>
-                                                                            {apt.reason !== 'blocked' && (
-                                                                                <Button
-                                                                                    variant="outline"
-                                                                                    className="w-full mt-2"
-                                                                                    onClick={() => startEditing(apt)}
-                                                                                >
-                                                                                    <Edit2 className="w-4 h-4 mr-2" /> Reprogramar
-                                                                                </Button>
-                                                                            )}
-                                                                            <Button
-                                                                                variant="outline"
-                                                                                className="w-full mt-2 border-red-200 text-red-600 hover:bg-red-50"
-                                                                                onClick={() => handleDeleteAppointment(apt.id)}
-                                                                            >
-                                                                                <Trash2 className="w-4 h-4 mr-2" /> Eliminar Cita
-                                                                            </Button>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            )}
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                );
-                                            })
-                                        )}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
+                <AppointmentDetailDialog
+                    appointment={selectedDetailApt}
+                    patient={patients.find(p => p.id === selectedDetailApt?.patientId)}
+                    hospitals={hospitals}
+                    isOpen={!!selectedDetailApt}
+                    onOpenChange={(open) => !open && setSelectedDetailApt(null)}
+                    onDelete={handleDeleteAppointment}
+                    onUpdate={handleUpdateAppointment}
+                    getAvailableSlots={getAvailableSlots || (() => [])}
+                />
             </CardContent>
-
-            <ConfirmDialog
-                open={!!appointmentToDelete}
-                onOpenChange={(open) => !open && setAppointmentToDelete(null)}
-                title="¿Eliminar Cita?"
-                description="Esta acción eliminará permanentemente la cita. No se puede deshacer."
-                confirmText="Eliminar Cita"
-                onConfirm={confirmDeleteAppointment}
-                isLoading={isDeleting}
-            />
         </Card>
     );
 };

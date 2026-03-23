@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar as CalendarIcon, LayoutDashboard, Users, Lock, CalendarPlus, LogOut, Menu, X, UserPlus, ShieldCheck } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { LayoutDashboard, Calendar as CalendarIcon, Users, Lock, CalendarPlus, UserPlus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { AdminOverview } from './AdminOverview';
 import { AdminCalendar } from './AdminCalendar';
@@ -11,28 +11,14 @@ import { PatientDirectory } from './PatientDirectory';
 import { AddPatientDialog } from './AddPatientDialog';
 import { AdminAppointmentDialog } from './AdminAppointmentDialog';
 import { BookingTypeDialog } from './BookingTypeDialog';
-import { GlobalSearch } from './GlobalSearch';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { AdminLayout } from './AdminLayout';
+import { useSearchParams } from 'react-router-dom';
 
 export const AdminDashboard = () => {
-    const { fullName, signOut } = useAuth();
     const { hospitals, blockSlot, saveAppointment, addPatient, getAvailableSlots, patients } = useAppointments();
 
-    // Helper helper
-    const formatTime = (timeStr: string) => {
-        if (!timeStr) return '';
-        const [hours, minutes] = timeStr.split(':');
-        const date = new Date();
-        date.setHours(parseInt(hours, 10));
-        date.setMinutes(parseInt(minutes, 10));
-        return new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true }).format(date);
-    };
-
-    // Local state for Blocking Dialog
     const [blockHospitalId, setBlockHospitalId] = useState('');
 
-    // Set default hospital once hospitals are loaded
     useEffect(() => {
         if (hospitals.length > 0 && !blockHospitalId) {
             setBlockHospitalId(hospitals[0].id);
@@ -43,10 +29,7 @@ export const AdminDashboard = () => {
     const [isAppointmentDialogOpen, setIsAppointmentDialogOpen] = useState(false);
     const [isBookingTypeDialogOpen, setIsBookingTypeDialogOpen] = useState(false);
     const [isAddPatientDialogOpen, setIsAddPatientDialogOpen] = useState(false);
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const navigate = useNavigate();
 
-    // Block Schedule State
     const [blockDate, setBlockDate] = useState('');
     const [blockTime, setBlockTime] = useState('');
     const [isBlocking, setIsBlocking] = useState(false);
@@ -75,218 +58,178 @@ export const AdminDashboard = () => {
         }
     };
 
-    const handleLogout = async () => {
-        await signOut();
-        navigate('/login');
+    const NavItems = [
+        { id: 'overview', label: 'Tablero', icon: LayoutDashboard },
+        { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
+        { id: 'patients', label: 'Pacientes', icon: Users },
+    ];
+
+    const formatTime = (timeStr: string) => {
+        if (!timeStr) return '';
+        const [hours, minutes] = timeStr.split(':');
+        const date = new Date();
+        date.setHours(parseInt(hours, 10));
+        date.setMinutes(parseInt(minutes, 10));
+        return new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true }).format(date);
     };
 
     return (
-        <div className="space-y-8 bg-gray-50/30 min-h-screen pb-20">
-            {/* Header */}
-            <div className="bg-[#1c334a] text-white shadow-md sticky top-0 z-40">
-                <div className="container mx-auto px-4 py-3 lg:py-4">
-                    <div className="flex flex-col gap-4">
-                        {/* Top Row: Logo & Mobile Toggle */}
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white/10 p-2.5 rounded-full backdrop-blur-sm border border-white/20">
-                                    <ShieldCheck className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
-                                </div>
-                                <div>
-                                    <h1 className="text-lg lg:text-xl font-bold tracking-tight leading-none">Panel Médico</h1>
-                                    <span className="text-[10px] lg:text-xs text-white/60 font-medium">
-                                        {fullName || 'Cargando...'}
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Mobile Menu Toggle */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="lg:hidden text-white hover:bg-white/10"
-                                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                            >
-                                {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        <AdminLayout
+            currentTab={currentTab}
+            onTabChange={(val) => setSearchParams({ tab: val })}
+            title={NavItems.find(i => i.id === currentTab)?.label || 'Panel'}
+            headerActions={
+                <>
+                    <Dialog open={isBlockDialogOpen} onOpenChange={setIsBlockDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="flex-1 md:flex-none border-red-200 text-red-600 hover:bg-red-50 rounded-2xl h-12 px-6 shadow-sm font-semibold transition-all active:scale-95">
+                                <Lock className="w-4 h-4 mr-2" />
+                                <span>Reservar</span>
                             </Button>
-                        </div>
-
-                        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                            {/* Global Search - Always Visible on Mobile (Full Width), Centered on Desktop */}
-                            <div className="w-full lg:flex-1 lg:max-w-xl lg:px-6 order-1 lg:order-none">
-                                <GlobalSearch />
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
+                            <div className="bg-[#0f172a] p-6 text-white text-center">
+                                <DialogHeader>
+                                    <div className="mx-auto w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center text-red-400 mb-4">
+                                        <Lock className="w-7 h-7" />
+                                    </div>
+                                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Bloquear Horario</DialogTitle>
+                                    <DialogDescription className="text-slate-400 font-medium mt-2">
+                                        El horario seleccionado no estará disponible para citas.
+                                    </DialogDescription>
+                                </DialogHeader>
                             </div>
 
-                            {/* Controls - Hidden on Mobile unless menu open, Visible on Desktop */}
-                            <div className={`${isMobileMenuOpen ? 'flex' : 'hidden'} lg:flex flex-col lg:flex-row items-stretch lg:items-center gap-3 w-full lg:w-auto order-2 border-t lg:border-t-0 border-white/10 pt-4 lg:pt-0`}>
-                                <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 w-full lg:w-auto">
-                                    <Dialog open={isBlockDialogOpen} onOpenChange={setIsBlockDialogOpen}>
-                                        <DialogTrigger asChild>
-                                            <Button size="sm" variant="secondary" className="bg-red-500/90 text-white hover:bg-red-600 border-0 shadow-lg font-medium justify-start lg:justify-center">
-                                                <Lock className="w-3.5 h-3.5 mr-2" />
-                                                <span>Reservar Horario</span>
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-[425px]">
-                                            <DialogHeader>
-                                                <DialogTitle className="flex items-center gap-2">
-                                                    <Lock className="w-5 h-5 text-red-500" />
-                                                    Bloquear Horario
-                                                </DialogTitle>
-                                            </DialogHeader>
-                                            <div className="grid gap-4 py-4">
-                                                <div className="grid gap-2">
-                                                    <label className="text-sm font-medium">Hospital</label>
-                                                    <select
-                                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                                        value={blockHospitalId}
-                                                        onChange={(e) => setBlockHospitalId(e.target.value)}
-                                                    >
-                                                        {hospitals.map(h => (
-                                                            <option key={h.id} value={h.id}>{h.name}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <label className="text-sm font-medium">Fecha</label>
-                                                    <Input
-                                                        type="date"
-                                                        value={blockDate}
-                                                        onChange={(e) => setBlockDate(e.target.value)}
-                                                    />
-                                                </div>
-                                                <div className="grid gap-2">
-                                                    <label className="text-sm font-medium">Hora</label>
-                                                    <select
-                                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                                        value={blockTime}
-                                                        onChange={(e) => setBlockTime(e.target.value)}
-                                                    >
-                                                        <option value="">Seleccionar hora...</option>
-                                                        {(blockDate && blockHospitalId)
-                                                            ? getAvailableSlots(blockDate, blockHospitalId).map(slot => (
-                                                                <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                                            ))
-                                                            : <option disabled>Seleccione una fecha primero</option>
-                                                        }
-                                                    </select>
-                                                </div>
-                                                <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId} className="bg-red-600 hover:bg-red-700">
-                                                    {isBlocking ? "Bloqueando..." : "Confirmar Bloqueo"}
-                                                </Button>
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
-
-                                    <Button
-                                        size="sm"
-                                        className="bg-primary hover:bg-primary/90 text-white shadow-lg gap-2 justify-start lg:justify-center"
-                                        onClick={() => setIsBookingTypeDialogOpen(true)}
+                            <div className="p-6 grid gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Sede / Hospital</label>
+                                    <select
+                                        className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 transition-all outline-none appearance-none font-bold text-slate-700"
+                                        value={blockHospitalId}
+                                        onChange={(e) => setBlockHospitalId(e.target.value)}
                                     >
-                                        <CalendarPlus className="w-4 h-4" />
-                                        <span>Agendar Cita</span>
-                                    </Button>
-
-                                    <Button
-                                        size="sm"
-                                        className="bg-primary hover:bg-primary/90 text-white shadow-lg gap-2 justify-start lg:justify-center"
-                                        onClick={() => setIsAddPatientDialogOpen(true)}
-                                    >
-                                        <UserPlus className="w-4 h-4" />
-                                        <span>Nuevo Paciente</span>
-                                    </Button>
-
-                                    <Button
-                                        size="sm"
-                                        variant="ghost"
-                                        className="text-white hover:bg-white/20 gap-2 justify-start lg:justify-center"
-                                        onClick={handleLogout}
-                                    >
-                                        <LogOut className="w-4 h-4" />
-                                        <span>Cerrar Sesión</span>
-                                    </Button>
+                                        {hospitals.map(h => (
+                                            <option key={h.id} value={h.id}>{h.name}</option>
+                                        ))}
+                                    </select>
                                 </div>
-
-                                <AdminAppointmentDialog
-                                    hospitals={hospitals}
-                                    onSave={saveAppointment}
-                                    getAvailableSlots={getAvailableSlots}
-                                    open={isAppointmentDialogOpen}
-                                    onOpenChange={(val) => {
-                                        setIsAppointmentDialogOpen(val);
-                                        if (!val) setBookingPatientData(null); // Clear data on close
-                                    }}
-                                    initialPatientData={bookingPatientData}
-                                />
-
-                                <BookingTypeDialog
-                                    open={isBookingTypeDialogOpen}
-                                    onOpenChange={setIsBookingTypeDialogOpen}
-                                    patients={patients}
-                                    onNewPatient={() => {
-                                        setIsBookingTypeDialogOpen(false);
-                                        setIsAddPatientDialogOpen(true);
-                                    }}
-                                    onExistingPatient={(patient) => {
-                                        setIsBookingTypeDialogOpen(false);
-                                        setBookingPatientData({
-                                            name: patient.name,
-                                            email: patient.email,
-                                            phone: patient.phone,
-                                            notes: ''
-                                        });
-                                        setIsAppointmentDialogOpen(true);
-                                    }}
-                                />
-
-                                <AddPatientDialog
-                                    open={isAddPatientDialogOpen}
-                                    onOpenChange={setIsAddPatientDialogOpen}
-                                    onSave={addPatient}
-                                    onBookAppointment={(data) => {
-                                        setBookingPatientData(data);
-                                        setIsAppointmentDialogOpen(true);
-                                    }}
-                                />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Fecha</label>
+                                        <Input
+                                            type="date"
+                                            className="h-12 rounded-xl border-slate-200 bg-slate-50/50 px-4 focus:ring-2 focus:ring-red-500 font-bold text-slate-700"
+                                            value={blockDate}
+                                            onChange={(e) => setBlockDate(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Hora</label>
+                                        <select
+                                            className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 transition-all outline-none appearance-none font-bold text-slate-700"
+                                            value={blockTime}
+                                            onChange={(e) => setBlockTime(e.target.value)}
+                                        >
+                                            <option value="">Hora...</option>
+                                            {(blockDate && blockHospitalId)
+                                                ? (getAvailableSlots ? getAvailableSlots(blockDate, blockHospitalId).map(slot => (
+                                                    <option key={slot} value={slot}>{formatTime(slot)}</option>
+                                                )) : null)
+                                                : <option disabled>...</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div className="pt-2">
+                                    <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId} className="w-full h-14 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-xl shadow-red-100 transition-all active:scale-95">
+                                        {isBlocking ? "Bloqueando..." : "Confirmar Bloqueo"}
+                                    </Button>
+                                    <Button variant="ghost" onClick={() => setIsBlockDialogOpen(false)} className="w-full mt-2 rounded-xl h-10 font-bold text-slate-400">Cancelar</Button>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                        </DialogContent>
+                    </Dialog>
 
+                    <Button
+                        className="bg-[#1e293b] hover:bg-[#0f172a] text-white rounded-2xl h-12 px-6 shadow-xl shadow-slate-200 flex-1 md:flex-none font-semibold transition-all active:scale-95"
+                        onClick={() => setIsBookingTypeDialogOpen(true)}
+                    >
+                        <CalendarPlus className="w-5 h-5 mr-2" />
+                        <span>Agendar Cita</span>
+                    </Button>
 
-            <div className="container mx-auto px-4">
-                <Tabs value={currentTab} onValueChange={(val) => setSearchParams({ tab: val })} className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-3 lg:w-[400px] mx-auto lg:mx-0">
-                        <TabsTrigger value="overview" className="gap-2">
-                            <LayoutDashboard className="w-4 h-4" /> Tablero
-                        </TabsTrigger>
-                        <TabsTrigger value="calendar" className="gap-2">
-                            <CalendarIcon className="w-4 h-4" /> Calendario
-                        </TabsTrigger>
-                        <TabsTrigger value="patients" className="gap-2">
-                            <Users className="w-4 h-4" /> Pacientes
-                        </TabsTrigger>
-                    </TabsList>
+                    <Button
+                        className="bg-slate-800 hover:bg-slate-900 text-white rounded-2xl h-12 px-6 shadow-xl shadow-slate-200 flex-1 md:flex-none font-semibold transition-all active:scale-95"
+                        onClick={() => setIsAddPatientDialogOpen(true)}
+                    >
+                        <UserPlus className="w-5 h-5 mr-2" />
+                        <span>Nuevo Paciente</span>
+                    </Button>
+                </>
+            }
+        >
+            {/* Tabs Content */}
+            <Tabs value={currentTab} onValueChange={(val) => setSearchParams({ tab: val })} className="w-full">
+                <TabsContent value="overview" className="mt-0 focus-visible:outline-none outline-none border-none">
+                    <AdminOverview />
+                </TabsContent>
 
-                    <TabsContent value="overview" className="space-y-4">
-                        <AdminOverview />
-                    </TabsContent>
+                <TabsContent value="calendar" className="mt-0 focus-visible:outline-none outline-none border-none">
+                    <AdminCalendar />
+                </TabsContent>
 
-                    <TabsContent value="calendar">
-                        <AdminCalendar />
-                    </TabsContent>
+                <TabsContent value="patients" className="mt-0 focus-visible:outline-none outline-none border-none">
+                    <PatientDirectory
+                        onBookAppointment={(data: any) => {
+                            setBookingPatientData(data);
+                            setIsAppointmentDialogOpen(true);
+                        }}
+                    />
+                </TabsContent>
+            </Tabs>
 
-                    <TabsContent value="patients">
-                        <PatientDirectory
-                            onBookAppointment={(data) => {
-                                setBookingPatientData(data);
-                                setIsAppointmentDialogOpen(true);
-                            }}
-                        />
-                    </TabsContent>
-                </Tabs>
-            </div>
-        </div>
+            {/* Dialogs */}
+            <AdminAppointmentDialog
+                hospitals={hospitals}
+                onSave={saveAppointment}
+                getAvailableSlots={getAvailableSlots}
+                open={isAppointmentDialogOpen}
+                onOpenChange={(val) => {
+                    setIsAppointmentDialogOpen(val);
+                    if (!val) setBookingPatientData(null);
+                }}
+                initialPatientData={bookingPatientData}
+            />
+
+            <BookingTypeDialog
+                open={isBookingTypeDialogOpen}
+                onOpenChange={setIsBookingTypeDialogOpen}
+                patients={patients}
+                onNewPatient={() => {
+                    setIsBookingTypeDialogOpen(false);
+                    setIsAddPatientDialogOpen(true);
+                }}
+                onExistingPatient={(patient) => {
+                    setIsBookingTypeDialogOpen(false);
+                    setBookingPatientData({
+                        name: patient.name,
+                        email: patient.email,
+                        phone: patient.phone,
+                        notes: ''
+                    });
+                    setIsAppointmentDialogOpen(true);
+                }}
+            />
+
+            <AddPatientDialog
+                open={isAddPatientDialogOpen}
+                onOpenChange={setIsAddPatientDialogOpen}
+                onSave={addPatient}
+                onBookAppointment={(data: any) => {
+                    setBookingPatientData(data);
+                    setIsAppointmentDialogOpen(true);
+                }}
+            />
+        </AdminLayout>
     );
 };

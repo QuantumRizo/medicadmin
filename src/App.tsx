@@ -12,6 +12,7 @@ import PatientRecordPage from "./pages/PatientRecordPage";
 const queryClient = new QueryClient();
 
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AppointmentsProvider } from "./contexts/AppointmentsContext";
 
 // Protected Route Component
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
@@ -50,33 +51,35 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
 
 const App = () => (
   <AuthProvider>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <BrowserRouter>
-          <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
-            <Route
-              path="/admin"
-              element={
-                <PrivateRoute>
-                  <Admin />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/admin/pacientes/:id"
-              element={
-                <PrivateRoute>
-                  <PatientRecordPage />
-                </PrivateRoute>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AppointmentsProvider>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <BrowserRouter>
+            <Routes>
+            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/login" element={<Login />} />
+              <Route
+                path="/admin"
+                element={
+                  <PrivateRoute>
+                    <Admin />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/admin/pacientes/:id"
+                element={
+                  <PrivateRoute>
+                    <PatientRecordPage />
+                  </PrivateRoute>
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </AppointmentsProvider>
   </AuthProvider>
 );
 

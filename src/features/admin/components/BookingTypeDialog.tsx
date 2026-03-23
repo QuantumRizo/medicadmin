@@ -42,35 +42,39 @@ export const BookingTypeDialog = ({ open, onOpenChange, onNewPatient, onExisting
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-[425px] flex flex-col p-0 gap-0">
-                <DialogHeader className="p-4 pb-2 shrink-0">
-                    <DialogTitle className="flex items-center gap-2">
-                        {view === 'search' && (
-                            <Button variant="ghost" size="icon" className="h-6 w-6 mr-1 -ml-2" onClick={() => setView('options')}>
-                                <ArrowLeft className="w-4 h-4" />
-                            </Button>
-                        )}
-                        {view === 'options' ? "Agendar Cita" : "Buscar Paciente"}
-                    </DialogTitle>
-                    <DialogDescription>
-                        {view === 'options'
-                            ? "Seleccione el tipo de paciente para continuar."
-                            : "Seleccione un paciente de la lista o escriba para buscar."}
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-[450px] max-h-[85vh] flex flex-col p-0 gap-0 rounded-2xl border-none shadow-2xl overflow-hidden">
+                <div className="bg-[#0f172a] p-6 text-white text-center">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center justify-center gap-3 text-xl font-bold">
+                            {view === 'search' && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/10 rounded-full absolute left-4" onClick={() => setView('options')}>
+                                    <ArrowLeft className="w-5 h-5" />
+                                </Button>
+                            )}
+                            {view === 'options' ? "Agendar Cita" : "Buscar Paciente"}
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 font-medium mt-2">
+                            {view === 'options'
+                                ? "¿El paciente ya está registrado en el sistema?"
+                                : "Seleccione un paciente para programar su cita."}
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
+
+                <div className="flex-1 overflow-hidden flex flex-col p-4">
 
                 {view === 'options' ? (
-                    <div className="grid grid-cols-2 gap-4 p-4 pt-2">
+                    <div className="grid grid-cols-2 gap-4 py-2">
                         <button
                             onClick={() => setView('search')}
-                            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                            className="flex flex-col items-center justify-center gap-4 p-5 rounded-2xl border border-slate-100 hover:border-sky-500 hover:bg-sky-50 transition-all group shadow-sm hover:shadow-md"
                         >
-                            <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                <UserCheck className="w-6 h-6" />
+                            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-sky-500 group-hover:text-white transition-all duration-300">
+                                <UserCheck className="w-7 h-7" />
                             </div>
-                            <div className="text-center space-y-1">
-                                <h3 className="font-semibold text-gray-900 text-sm">Paciente Registrado</h3>
-                                <p className="text-xs text-gray-500">Buscar en el directorio</p>
+                            <div className="text-center">
+                                <h3 className="font-bold text-slate-800 text-sm">Registrado</h3>
+                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-1">Busca en directorio</p>
                             </div>
                         </button>
 
@@ -79,25 +83,25 @@ export const BookingTypeDialog = ({ open, onOpenChange, onNewPatient, onExisting
                                 handleOpenChange(false);
                                 onNewPatient();
                             }}
-                            className="flex flex-col items-center justify-center gap-3 p-4 rounded-xl border-2 border-dashed border-gray-200 hover:border-green-500/50 hover:bg-green-50 transition-all group"
+                            className="flex flex-col items-center justify-center gap-4 p-5 rounded-2xl border border-emerald-500 hover:bg-emerald-50 transition-all group shadow-sm hover:shadow-md"
                         >
-                            <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center text-green-600 group-hover:scale-110 transition-transform">
-                                <UserPlus className="w-6 h-6" />
+                            <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-all duration-300">
+                                <UserPlus className="w-7 h-7" />
                             </div>
-                            <div className="text-center space-y-1">
-                                <h3 className="font-semibold text-gray-900 text-sm">Nuevo Paciente</h3>
-                                <p className="text-xs text-gray-500">Crear registro nuevo</p>
+                            <div className="text-center">
+                                <h3 className="font-bold text-slate-800 text-sm">Nuevo</h3>
+                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider mt-1">Crear registro</p>
                             </div>
                         </button>
                     </div>
                 ) : (
                     <div className="flex flex-col flex-1 overflow-hidden">
-                        <div className="px-6 py-2 shrink-0">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <div className="pb-4 shrink-0 px-2">
+                            <div className="relative group">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-sky-500 transition-colors" />
                                 <Input
-                                    placeholder="Buscar por nombre, email o teléfono..."
-                                    className="pl-9"
+                                    placeholder="Nombre o teléfono..."
+                                    className="pl-11 rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500 transition-all font-medium"
                                     autoFocus
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -105,14 +109,14 @@ export const BookingTypeDialog = ({ open, onOpenChange, onNewPatient, onExisting
                             </div>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto min-h-0 bg-gray-50/50 border-t">
+                        <div className="flex-1 overflow-y-auto bg-slate-50/50 rounded-xl border border-slate-100 mb-2">
                             {displayedPatients.length === 0 ? (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-400 p-8 text-center text-sm">
-                                    <User className="w-8 h-8 opacity-20 mb-2" />
+                                <div className="h-[200px] flex flex-col items-center justify-center text-slate-300 p-8 text-center text-sm">
+                                    <User className="w-10 h-10 opacity-20 mb-2" />
                                     No se encontraron pacientes
                                 </div>
                             ) : (
-                                <div className="divide-y divide-gray-100 bg-white">
+                                <div className="divide-y divide-slate-100 bg-white">
                                     {displayedPatients.map(patient => (
                                         <button
                                             key={patient.id}
@@ -120,19 +124,23 @@ export const BookingTypeDialog = ({ open, onOpenChange, onNewPatient, onExisting
                                                 handleOpenChange(false);
                                                 onExistingPatient(patient);
                                             }}
-                                            className="w-full text-left px-6 py-3 hover:bg-primary/5 transition-colors flex items-center justify-between group"
+                                            className="w-full text-left px-5 py-4 hover:bg-sky-50/50 transition-colors flex items-center justify-between group"
                                         >
                                             <div className="flex-1 min-w-0">
-                                                <div className="font-medium text-gray-900 truncate">{patient.name}</div>
-                                                {isSearching && (
-                                                    <div className="text-xs text-gray-500 flex gap-2 truncate">
-                                                        <span>{patient.email}</span>
-                                                        <span>•</span>
-                                                        <span>{patient.phone}</span>
-                                                    </div>
-                                                )}
+                                                <div className="font-bold text-slate-900 truncate group-hover:text-sky-600 transition-colors">{patient.name}</div>
+                                                <div className="text-[10px] text-slate-400 font-medium flex gap-2 truncate mt-0.5">
+                                                    <span>{patient.phone}</span>
+                                                    {patient.email && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="truncate">{patient.email}</span>
+                                                        </>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-primary shrink-0 ml-2" />
+                                            <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-300 group-hover:bg-sky-100 group-hover:text-sky-600 transition-all">
+                                                <ArrowRight className="w-4 h-4" />
+                                            </div>
                                         </button>
                                     ))}
                                 </div>
@@ -140,6 +148,7 @@ export const BookingTypeDialog = ({ open, onOpenChange, onNewPatient, onExisting
                         </div>
                     </div>
                 )}
+                </div>
             </DialogContent>
         </Dialog>
     );
