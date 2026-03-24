@@ -49,7 +49,12 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         }
         
         try {
-            setLoading(true);
+            // Only set loading to true if we don't have data yet
+            const isInitialLoad = appointments.length === 0 && patients.length === 0 && hospitals.length === 0;
+            if (isInitialLoad) {
+                setLoading(true);
+            }
+            
             const [{ data: appointmentsData, error: appointmentsError }, 
                    { data: patientsData, error: patientsError }, 
                    { data: hospitalsData, error: hospitalsError }] = await Promise.all([

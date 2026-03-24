@@ -59,6 +59,8 @@ export const PatientClinicalRecord = ({
             ...(initialPatient.medicalHistory?.address || {})
         }
     });
+    const [hasRestoredFromBackup, setHasRestoredFromBackup] = useState(false);
+
 
     // Unsaved changes tracking
     const [initialHistoryStr, setInitialHistoryStr] = useState("");
@@ -71,32 +73,107 @@ export const PatientClinicalRecord = ({
             return value;
         });
     };
-
-    useEffect(() => {
-        setPatient(initialPatient);
-        setGeneralNotes(initialPatient.notes || '');
-        const loadedHistory = {
-            ...DEFAULT_HISTORY,
-            ...(initialPatient.medicalHistory || {}),
-            address: {
-                street: '', number: '', neighborhood: '', municipality: '', city: '', state: '', zipCode: '',
-                ...(initialPatient.medicalHistory?.address || {})
-            }
-        };
-        setHistory(loadedHistory);
-        setInitialHistoryStr(normalizeForCompare(loadedHistory));
-        setInitialNotesStr(normalizeForCompare(initialPatient.notes || ''));
-        setInitialCoreStr(normalizeForCompare({ 
-            name: initialPatient.name, 
-            phone: initialPatient.phone, 
-            email: initialPatient.email 
-        }));
-    }, [initialPatient]);
-
+ 
     const hasUnsavedChanges = 
         normalizeForCompare(history) !== initialHistoryStr || 
         normalizeForCompare(generalNotes) !== initialNotesStr ||
         normalizeForCompare({ name: patient.name, phone: patient.phone, email: patient.email }) !== initialCoreStr;
+
+
+    useEffect(() => {
+        // Only reset if the patient ID changed
+        if (patient.id !== initialPatient.id) {
+            setPatient(initialPatient);
+            setGeneralNotes(initialPatient.notes || '');
+            const loadedHistory = {
+                ...DEFAULT_HISTORY,
+                ...(initialPatient.medicalHistory || {}),
+                address: {
+                    street: '', number: '', neighborhood: '', municipality: '', city: '', state: '', zipCode: '',
+                    ...(initialPatient.medicalHistory?.address || {})
+                }
+            };
+            setHistory(loadedHistory);
+            setInitialHistoryStr(normalizeForCompare(loadedHistory));
+            setInitialNotesStr(normalizeForCompare(initialPatient.notes || ''));
+            setInitialCoreStr(normalizeForCompare({ 
+                name: initialPatient.name, 
+                phone: initialPatient.phone, 
+                email: initialPatient.email 
+            }));
+            setHasRestoredFromBackup(false);
+        }
+    }, [initialPatient.id]); // Only run when ID changes
+
+    // Backup Logic: Save to localStorage when things change
+    useEffect(() => {
+        if (!hasUnsavedChanges) {
+            localStorage.removeItem(`backup_patient_${patient.id}`);
+            return;
+        }
+
+        const backupData = {
+            patient: { name: patient.name, phone: patient.phone, email: patient.email },
+            generalNotes,
+            history,
+            timestamp: new Date().toISOString()
+        };
+
+        const timer = setTimeout(() => {
+            localStorage.setItem(`backup_patient_${patient.id}`, JSON.stringify(backupData));
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [patient.name, patient.phone, patient.email, generalNotes, history, hasUnsavedChanges, patient.id]);
+
+    // Restore Logic: Check for backup on mount
+    useEffect(() => {
+        const saved = localStorage.getItem(`backup_patient_${patient.id}`);
+        if (saved && !hasRestoredFromBackup) {
+            try {
+                const backup = JSON.parse(saved);
+                // If backup is newer than 24h
+                const backupTime = new Date(backup.timestamp).getTime();
+                if (Date.now() - backupTime < 24 * 60 * 60 * 1000) {
+                    toast("Se encontró un respaldo no guardado", {
+                        description: "¿Deseas recuperar los datos escritos anteriormente?",
+                        action: {
+                            label: "Recuperar",
+                            onClick: () => {
+                                setPatient(prev => ({ ...prev, ...backup.patient }));
+                                setGeneralNotes(backup.generalNotes);
+                                setHistory(backup.history);
+                                setHasRestoredFromBackup(true);
+                                toast.success("Se han restaurado los datos del respaldo");
+                            }
+                        },
+                        cancel: {
+                            label: "Descartar",
+                            onClick: () => {
+                                localStorage.removeItem(`backup_patient_${patient.id}`);
+                                setHasRestoredFromBackup(true);
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Error parsing backup", e);
+            }
+        }
+    }, [patient.id, hasRestoredFromBackup]);
+
+    // BeforeUnload Guard
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [hasUnsavedChanges]);
+
 
     const handleChange = (field: keyof MedicalHistory, value: any) => {
         setHistory(prev => ({ ...prev, [field]: value }));
@@ -131,6 +208,7 @@ export const PatientClinicalRecord = ({
                 email: updated.email 
             }));
             toast.success("Expediente médico guardado correctamente");
+            localStorage.removeItem(`backup_patient_${patient.id}`);
         } catch (error) {
             console.error("Error saving patient", error);
             toast.error("Error al guardar el expediente");
