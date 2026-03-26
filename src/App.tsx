@@ -2,8 +2,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-// import Index from "./pages/Index";
-// import Book from "./pages/Book";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
 import { Button } from "@/components/ui/button";
