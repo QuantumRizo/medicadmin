@@ -1,6 +1,4 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 
 export type ToothFace = 'top' | 'bottom' | 'left' | 'right' | 'center';

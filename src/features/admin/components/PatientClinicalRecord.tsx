@@ -123,10 +123,22 @@ export const PatientClinicalRecord = ({
 
         const timer = setTimeout(() => {
             localStorage.setItem(`backup_patient_${patient.id}`, JSON.stringify(backupData));
-        }, 1000);
+        }, 200); // Faster debounce
 
         return () => clearTimeout(timer);
     }, [patient.name, patient.phone, patient.email, generalNotes, history, hasUnsavedChanges, patient.id]);
+
+    // Auto-Save to DB every 30s if changes exist
+    useEffect(() => {
+        if (!hasUnsavedChanges) return;
+
+        const autoSaveTimer = setInterval(() => {
+            console.log("Auto-saving clinical record...");
+            handleSaveAll(true);
+        }, 30000); // 30 seconds
+
+        return () => clearInterval(autoSaveTimer);
+    }, [hasUnsavedChanges, history, generalNotes, patient.id]);
 
     // Restore Logic: Check for backup on mount
     useEffect(() => {
@@ -137,6 +149,16 @@ export const PatientClinicalRecord = ({
                 // If backup is newer than 24h
                 const backupTime = new Date(backup.timestamp).getTime();
                 if (Date.now() - backupTime < 24 * 60 * 60 * 1000) {
+                    // SILENT AUTO-RECOVERY: If it's very recent (< 5 mins), just do it
+                    if (Date.now() - backupTime < 5 * 60 * 1000) {
+                        setPatient(prev => ({ ...prev, ...backup.patient }));
+                        setGeneralNotes(backup.generalNotes);
+                        setHistory(backup.history);
+                        setHasRestoredFromBackup(true);
+                        console.log("Silent auto-recovery applied for patient", patient.id);
+                        return;
+                    }
+
                     toast("Se encontró un respaldo no guardado", {
                         description: "¿Deseas recuperar los datos escritos anteriormente?",
                         action: {
@@ -146,7 +168,6 @@ export const PatientClinicalRecord = ({
                                 setGeneralNotes(backup.generalNotes);
                                 setHistory(backup.history);
                                 setHasRestoredFromBackup(true);
-                                toast.success("Se han restaurado los datos del respaldo");
                             }
                         },
                         cancel: {
@@ -193,7 +214,7 @@ export const PatientClinicalRecord = ({
         return age;
     };
 
-    const handleSaveAll = async () => {
+    const handleSaveAll = async (isSilent: boolean = false) => {
         try {
             const updated = { 
                 ...patient, 
@@ -209,11 +230,11 @@ export const PatientClinicalRecord = ({
                 phone: updated.phone, 
                 email: updated.email 
             }));
-            toast.success("Expediente médico guardado correctamente");
+            if (!isSilent) toast.success("Expediente médico guardado correctamente");
             localStorage.removeItem(`backup_patient_${patient.id}`);
         } catch (error) {
             console.error("Error saving patient", error);
-            toast.error("Error al guardar el expediente");
+            if (!isSilent) toast.error("Error al guardar el expediente");
         }
     };
 
@@ -512,7 +533,7 @@ export const PatientClinicalRecord = ({
                 <div className="lg:col-span-3 flex flex-col gap-6">
                     
                     <Button 
-                        onClick={handleSaveAll} 
+                        onClick={() => handleSaveAll()} 
                         className="w-full h-14 text-white bg-[#1c334a] hover:bg-[#2a4560] font-bold text-base shadow-lg group transition-all"
                     >
                         <Save className="w-6 h-6 mr-2 group-hover:scale-110 transition-transform" /> 
@@ -672,7 +693,7 @@ export const PatientClinicalRecord = ({
                         <p className="text-xs text-gray-500 hidden sm:block">Asegúrate de presionar guardar para no perder el progreso de este expediente.</p>
                     </div>
                 </div>
-                <Button onClick={handleSaveAll} className="bg-[#1c334a] hover:bg-[#2a4560] text-white font-bold h-10 px-6 shadow-md shrink-0">
+                <Button onClick={() => handleSaveAll()} className="bg-[#1c334a] hover:bg-[#2a4560] text-white font-bold h-10 px-6 shadow-md shrink-0">
                     <Save className="w-4 h-4 mr-2 hidden sm:block" /> Guardar
                 </Button>
             </div>
