@@ -99,7 +99,8 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 image: h.image,
                 startTime: h.start_time,
                 endTime: h.end_time,
-                slotInterval: h.slot_interval
+                slotInterval: h.slot_interval,
+                isDentalClinic: h.is_dental_clinic || false
             }));
 
             const mappedPatients = (patientsData || [])

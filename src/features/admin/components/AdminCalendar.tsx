@@ -111,7 +111,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                     >
                         <option value="all">Sede: Todas las Sedes</option>
                         {hospitals.map(h => (
-                            <option key={h.id} value={h.id}>{h.name}</option>
+                            <option key={h.id} value={h.id}>{h.name}{h.isDentalClinic ? ' (Dental)' : ''}</option>
                         ))}
                     </select>
 

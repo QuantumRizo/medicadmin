@@ -7,6 +7,7 @@ export interface Hospital {
     startTime: string;   // ej. '09:00'
     endTime: string;     // ej. '20:30'
     slotInterval: number; // ej. 30
+    isDentalClinic?: boolean;
 }
 
 export type AppointmentReason = 'first-visit' | 'follow-up' | 'specific-service' | 'blocked';
@@ -65,6 +66,9 @@ export interface MedicalHistory {
     diagnosis?: string; // Diagnóstico
     treatment?: string; // Tratamiento
     prognosis?: string; // Pronóstico
+    
+    // Odontograma
+    odontogramData?: Record<number, Record<string, string>>; // Estado de cada cara de la pieza
 }
 
 export interface SoapNote {

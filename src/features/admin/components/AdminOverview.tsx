@@ -4,6 +4,7 @@ import { Users, Calendar, TrendingUp, Clock, MapPin } from 'lucide-react';
 import { format, isToday, parseISO, isThisWeek, isAfter } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
@@ -267,7 +268,12 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                                                         <MapPin className="w-3 h-3 text-gray-600" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <p className="text-xs font-medium text-gray-900 truncate max-w-full">{hospital.name}</p>
+                                                        <div className="flex items-center gap-2">
+                                                            <p className="text-xs font-bold text-gray-900 truncate max-w-full">{hospital.name}</p>
+                                                            {hospital.isDentalClinic && (
+                                                                <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 h-4 px-1.5 text-[8px] font-extrabold border-none tracking-tighter">DENT</Badge>
+                                                            )}
+                                                        </div>
                                                         <p className="text-[10px] text-gray-500 truncate max-w-full">{hospital.address || 'Ubicación registrada'}</p>
                                                     </div>
                                                 </div>

@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
 import { formatTime } from '../../appointments/utils';
+import { Odontograma } from './Odontograma';
 
 interface PatientClinicalRecordProps {
     patient: Patient;
@@ -33,7 +34,8 @@ const DEFAULT_HISTORY: MedicalHistory = {
     surgeries: '',
     medications: '',
     familyHistory: '',
-    bloodType: ''
+    bloodType: '',
+    odontogramData: {}
 };
 
 export const PatientClinicalRecord = ({
@@ -468,6 +470,24 @@ export const PatientClinicalRecord = ({
                             </div>
                         </CardContent>
                     </Card>
+
+                    {/* Odontograma (Solo si es clínica dental) */}
+                    {hospitals.some(h => h.isDentalClinic) && (
+                        <Card className="shadow-sm border-t-4 border-t-[#1c334a]">
+                            <CardHeader className="bg-gray-50/50 pb-3 border-b">
+                                <CardTitle className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                                    <Activity className="w-4 h-4 text-[#1c334a]" />
+                                    Odontograma Clínico
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                <Odontograma 
+                                    value={history.odontogramData as any} 
+                                    onChange={(data) => handleChange('odontogramData', data)} 
+                                />
+                            </CardContent>
+                        </Card>
+                    )}
 
                     {/* Medicamentos Activos */}
                     <Card className="shadow-sm">

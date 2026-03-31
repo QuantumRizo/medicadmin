@@ -252,7 +252,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                             >
                                 <option value="all">Filtro: Todos los Hospitales</option>
                                 {hospitals.map(h => (
-                                    <option key={h.id} value={h.id}>{h.name}</option>
+                                    <option key={h.id} value={h.id}>{h.name}{h.isDentalClinic ? ' (Dental)' : ''}</option>
                                 ))}
                             </select>
                             <select
