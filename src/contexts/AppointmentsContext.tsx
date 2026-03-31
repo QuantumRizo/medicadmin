@@ -203,17 +203,25 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const updatePatient = async (patient: Patient) => {
+        if (!APP_ID) return;
         try {
+            console.log(`[Supabase] Updating patient ${patient.id}...`);
             const { error } = await supabase.from('patients').update({
                 name: patient.name,
                 phone: standardizePhone(patient.phone),
                 email: patient.email,
                 notes: patient.notes,
                 medical_history: patient.medicalHistory
-            }).eq('id', patient.id);
-            if (error) throw error;
+            }).eq('id', patient.id).eq('app_id', APP_ID);
+
+            if (error) {
+                console.error('[Supabase] Error updating patient:', error);
+                throw error;
+            }
+            console.log(`[Supabase] Patient ${patient.id} updated successfully.`);
         } catch (error) {
-            console.error('Error updating patient:', error);
+            console.error('Error in updatePatient:', error);
+            throw error;
         }
     };
 

@@ -26,6 +26,7 @@ interface PatientClinicalRecordProps {
     onDeleteAppointment?: (id: string) => Promise<void>;
     onUpdateAppointment?: (id: string, updates: Partial<Appointment>) => Promise<void>;
     getAvailableSlots?: (date: string, hospitalId: string) => string[];
+    onFetchData?: () => Promise<void>;
 }
 
 const DEFAULT_HISTORY: MedicalHistory = {
@@ -38,6 +39,15 @@ const DEFAULT_HISTORY: MedicalHistory = {
     odontogramData: {}
 };
 
+// Module-level normalize function — needed for useState lazy initializers (which run before the component body)
+const normalizeForCompareStatic = (val: any): string => {
+    return JSON.stringify(val, (_key, value) => {
+        if (value === "" || value === null || value === undefined) return undefined;
+        return value;
+    });
+};
+
+
 export const PatientClinicalRecord = ({
     patient: initialPatient,
     appointments,
@@ -45,7 +55,8 @@ export const PatientClinicalRecord = ({
     onUpdatePatient,
     onDeleteAppointment,
     onUpdateAppointment,
-    getAvailableSlots
+    getAvailableSlots,
+    onFetchData
 }: PatientClinicalRecordProps) => {
 
     const [patient, setPatient] = useState<Patient>(initialPatient);
@@ -63,11 +74,17 @@ export const PatientClinicalRecord = ({
     });
     const [hasRestoredFromBackup, setHasRestoredFromBackup] = useState(false);
 
-
-    // Unsaved changes tracking
-    const [initialHistoryStr, setInitialHistoryStr] = useState("");
-    const [initialNotesStr, setInitialNotesStr] = useState("");
-    const [initialCoreStr, setInitialCoreStr] = useState("");
+    // Unsaved changes tracking — initialized from actual DB data so hasUnsavedChanges starts as false
+    const [initialHistoryStr, setInitialHistoryStr] = useState(() => normalizeForCompareStatic({
+        ...DEFAULT_HISTORY,
+        ...(initialPatient.medicalHistory || {}),
+        address: {
+            street: '', number: '', neighborhood: '', municipality: '', city: '', state: '', zipCode: '',
+            ...(initialPatient.medicalHistory?.address || {})
+        }
+    }));
+    const [initialNotesStr, setInitialNotesStr] = useState(() => normalizeForCompareStatic(initialPatient.notes || ''));
+    const [initialCoreStr, setInitialCoreStr] = useState(() => normalizeForCompareStatic({ name: initialPatient.name, phone: initialPatient.phone, email: initialPatient.email }));
 
     const normalizeForCompare = (val: any) => {
         return JSON.stringify(val, (_key, value) => {
@@ -141,21 +158,38 @@ export const PatientClinicalRecord = ({
     }, [hasUnsavedChanges, history, generalNotes, patient.id]);
 
     // Restore Logic: Check for backup on mount
+    // ONLY restores if the backup data is actually different from what's already in the DB
     useEffect(() => {
         const saved = localStorage.getItem(`backup_patient_${patient.id}`);
         if (saved && !hasRestoredFromBackup) {
             try {
                 const backup = JSON.parse(saved);
-                // If backup is newer than 24h
                 const backupTime = new Date(backup.timestamp).getTime();
+
+                // Check if backup data is actually different from current DB data
+                const backupNotesStr = normalizeForCompareStatic(backup.generalNotes || '');
+                const backupHistoryStr = normalizeForCompareStatic(backup.history || {});
+                const dbNotesStr = normalizeForCompareStatic(initialPatient.notes || '');
+                const dbHistoryStr = normalizeForCompareStatic(initialPatient.medicalHistory || {});
+
+                const isActuallyDifferent = backupNotesStr !== dbNotesStr || backupHistoryStr !== dbHistoryStr;
+
+                if (!isActuallyDifferent) {
+                    // Backup matches DB — it was already saved. Discard stale backup.
+                    localStorage.removeItem(`backup_patient_${patient.id}`);
+                    setHasRestoredFromBackup(true);
+                    console.log("[Backup] Backup matches DB data, discarding stale backup.");
+                    return;
+                }
+
                 if (Date.now() - backupTime < 24 * 60 * 60 * 1000) {
-                    // SILENT AUTO-RECOVERY: If it's very recent (< 5 mins), just do it
+                    // SILENT AUTO-RECOVERY: If it's very recent (< 5 mins) and different from DB
                     if (Date.now() - backupTime < 5 * 60 * 1000) {
                         setPatient(prev => ({ ...prev, ...backup.patient }));
                         setGeneralNotes(backup.generalNotes);
                         setHistory(backup.history);
                         setHasRestoredFromBackup(true);
-                        console.log("Silent auto-recovery applied for patient", patient.id);
+                        console.log("[Backup] Silent auto-recovery applied — data was different from DB.");
                         return;
                     }
 
@@ -181,8 +215,11 @@ export const PatientClinicalRecord = ({
                 }
             } catch (e) {
                 console.error("Error parsing backup", e);
+                localStorage.removeItem(`backup_patient_${patient.id}`);
+                setHasRestoredFromBackup(true);
             }
         }
+        if (!saved) setHasRestoredFromBackup(true);
     }, [patient.id, hasRestoredFromBackup]);
 
     // BeforeUnload Guard
@@ -216,12 +253,23 @@ export const PatientClinicalRecord = ({
 
     const handleSaveAll = async (isSilent: boolean = false) => {
         try {
+            if (!isSilent) console.log("Manual save triggered for patient:", patient.id);
+            
             const updated = { 
                 ...patient, 
                 notes: generalNotes,
                 medicalHistory: history 
             };
+
+            // Clear backup BEFORE saving to DB to prevent stale backup from being restored on next mount
+            localStorage.removeItem(`backup_patient_${patient.id}`);
+            
             await onUpdatePatient(updated);
+
+            // Force the global context to refresh from DB so navigating away and back shows correct data
+            if (onFetchData) await onFetchData();
+            
+            // Re-sync initial states to clear the "unsaved changes" banner
             setPatient(updated);
             setInitialHistoryStr(normalizeForCompare(history));
             setInitialNotesStr(normalizeForCompare(generalNotes));
@@ -230,11 +278,18 @@ export const PatientClinicalRecord = ({
                 phone: updated.phone, 
                 email: updated.email 
             }));
-            if (!isSilent) toast.success("Expediente médico guardado correctamente");
-            localStorage.removeItem(`backup_patient_${patient.id}`);
-        } catch (error) {
+            
+            if (!isSilent) {
+                toast.success("Expediente médico guardado correctamente");
+                console.log("Manual save successful");
+            }
+        } catch (error: any) {
             console.error("Error saving patient", error);
-            if (!isSilent) toast.error("Error al guardar el expediente");
+            if (!isSilent) {
+                toast.error("Error al guardar el expediente", {
+                    description: error.message || "Ocurrió un error inesperado al conectar con el servidor."
+                });
+            }
         }
     };
 
@@ -290,7 +345,7 @@ export const PatientClinicalRecord = ({
                                 </div>
                                 <div>
                                     <Input
-                                        value={patient.name}
+                                        value={patient.name || ''}
                                         onChange={(e) => setPatient(prev => ({ ...prev, name: e.target.value }))}
                                         className="text-xl font-bold text-[#1c334a] text-center bg-transparent border-none focus-visible:ring-1 focus-visible:ring-sky-500 mb-1 h-auto py-1 px-2"
                                         placeholder="Nombre del paciente"
@@ -306,7 +361,7 @@ export const PatientClinicalRecord = ({
                                     <div className="flex items-center gap-2 px-2 bg-gray-50/50 rounded-lg">
                                         <Phone className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                                         <Input
-                                            value={patient.phone}
+                                            value={patient.phone || ''}
                                             onChange={(e) => setPatient(prev => ({ ...prev, phone: e.target.value }))}
                                             className="h-8 text-xs bg-transparent border-none focus-visible:ring-0 px-1 font-medium"
                                             placeholder="Teléfono"
@@ -315,7 +370,7 @@ export const PatientClinicalRecord = ({
                                     <div className="flex items-center gap-2 px-2 bg-gray-50/50 rounded-lg">
                                         <Mail className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                                         <Input
-                                            value={patient.email}
+                                            value={patient.email || ''}
                                             onChange={(e) => setPatient(prev => ({ ...prev, email: e.target.value }))}
                                             className="h-8 text-xs bg-transparent border-none focus-visible:ring-0 px-1 font-medium"
                                             placeholder="Correo electrónico"

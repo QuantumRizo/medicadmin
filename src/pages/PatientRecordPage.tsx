@@ -8,7 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 const PatientRecordPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const { patients, appointments, updatePatient, deleteAppointment, updateAppointment, getAvailableSlots, loading, hospitals } = useAppointments();
+    const { patients, appointments, updatePatient, deleteAppointment, updateAppointment, getAvailableSlots, loading, hospitals, fetchData } = useAppointments();
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500 bg-gray-50 min-h-screen">Cargando expediente...</div>;
@@ -45,6 +45,7 @@ const PatientRecordPage = () => {
                     onDeleteAppointment={deleteAppointment}
                     onUpdateAppointment={updateAppointment}
                     getAvailableSlots={getAvailableSlots}
+                    onFetchData={fetchData}
                 />
             </div>
         </AdminLayout>
