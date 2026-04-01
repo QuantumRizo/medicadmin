@@ -20,7 +20,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [appId, setAppId] = useState<string | null>(null);
     const [fullName, setFullName] = useState<string | null>(null);
-    const [canUploadFiles, setCanUploadFiles] = useState<boolean>(false);
     const [subscriptionStatus, setSubscriptionStatus] = useState<string>('trial');
     const [planName, setPlanName] = useState<string>('Free');
     const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
@@ -45,7 +44,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
                 setAppId(null);
                 setFullName(null);
-                setCanUploadFiles(false);
                 setSubscriptionStatus('trial');
                 setPlanName('Free');
                 setTrialEndsAt(null);
@@ -61,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('app_id, full_name, can_upload_files, subscription_status, plan_name, trial_ends_at')
+                .select('app_id, full_name, subscription_status, plan_name, trial_ends_at')
                 .eq('id', userId)
                 .single();
 
@@ -70,7 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (data) {
                 setAppId(data.app_id);
                 setFullName(data.full_name);
-                setCanUploadFiles(data.can_upload_files || false);
                 setSubscriptionStatus(data.subscription_status || 'trial');
                 setPlanName(data.plan_name || 'Free');
                 setTrialEndsAt(data.trial_ends_at || null);
@@ -91,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             user, 
             appId, 
             fullName, 
-            canUploadFiles, 
+            canUploadFiles: subscriptionStatus === 'active' || subscriptionStatus === 'trial', 
             subscriptionStatus, 
             planName, 
             trialEndsAt, 
