@@ -69,6 +69,7 @@ export interface MedicalHistory {
     
     // Odontograma
     odontogramData?: Record<number, Record<string, string>>; // Estado de cada cara de la pieza
+    odontogramNotes?: Record<number, string>; // Notas por diente: { 11: "Caries mesial profunda", ... }
 }
 
 export interface SoapNote {
