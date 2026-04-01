@@ -170,47 +170,30 @@ export const SubscriptionPage = () => {
                     </div>
                 </div>
             ) : (
-                <div className="grid md:grid-cols-2 gap-8">
-                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-slate-200 bg-white p-8 space-y-6">
-                        <div className="w-16 h-16 rounded-2xl bg-green-50 text-green-500 flex items-center justify-center">
-                            <Sparkles className="w-8 h-8" />
+                <div className="flex justify-center">
+                    <Card className="max-w-2xl w-full rounded-[2.5rem] border-none shadow-xl shadow-slate-200 bg-white p-8 md:p-12 space-y-8 text-center md:text-left">
+                        <div className="flex flex-col md:flex-row items-center gap-8">
+                            <div className="w-20 h-20 rounded-3xl bg-green-50 text-green-500 flex items-center justify-center shrink-0">
+                                <Sparkles className="w-10 h-10" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-3xl font-black text-[#1c334a]">¡Gracias por tu confianza!</h3>
+                                <p className="text-slate-500 text-lg font-medium">
+                                    Tu plan <span className="text-sky-500 font-bold uppercase">{planName}</span> está activo y tienes acceso completo a todas las herramientas premium de MedicAdmin.
+                                </p>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-black text-[#1c334a]">¡Gracias por tu confianza!</h3>
-                            <p className="text-slate-500 font-medium">
-                                Tu plan <span className="text-sky-500 font-bold">{planName}</span> está activo y tienes acceso completo a todas las herramientas premium de MedicAdmin.
-                            </p>
-                        </div>
-                        <ul className="space-y-3 pt-4">
+                        
+                        <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-slate-50">
                             {features.map((f, i) => (
-                                <li key={i} className="flex items-start gap-3 text-sm font-medium text-slate-600">
+                                <div key={i} className="flex items-start gap-3 text-sm font-bold text-slate-600">
                                     <div className="mt-1 bg-green-100 p-0.5 rounded-full text-green-600 shrink-0">
                                         <Check className="w-3 h-3" />
                                     </div>
                                     {f}
-                                </li>
+                                </div>
                             ))}
-                        </ul>
-                    </Card>
-
-                    <Card className="rounded-[2.5rem] border-none shadow-xl shadow-slate-200 bg-white overflow-hidden flex flex-col">
-                        <CardHeader className="p-8 bg-slate-50 border-b border-slate-100">
-                            <CardTitle className="text-xl font-black text-[#1c334a]">Información de Cuenta</CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-8 flex-1 flex flex-col justify-center items-center text-center space-y-4">
-                            <div className="w-20 h-20 rounded-full bg-sky-50 flex items-center justify-center text-sky-500">
-                                <ShieldCheck className="w-10 h-10" />
-                            </div>
-                            <div className="space-y-1">
-                                <p className="font-black text-[#1c334a]">Suscripción Protegida</p>
-                                <p className="text-sm text-slate-500 font-medium">
-                                    Tu cuenta está vinculada a tu app_id y cifrada de extremo a extremo.
-                                </p>
-                            </div>
-                            <Button variant="outline" className="mt-6 rounded-xl font-bold border-slate-200 text-slate-600">
-                                Gestionar Facturación
-                            </Button>
-                        </CardContent>
+                        </div>
                     </Card>
                 </div>
             )}
