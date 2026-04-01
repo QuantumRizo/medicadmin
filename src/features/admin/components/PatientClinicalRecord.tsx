@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isAfter, format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Activity, Phone, Mail, Clock, FileText, User, AlertCircle, Save, Trash2 } from 'lucide-react';
+import { Activity, Phone, Mail, Clock, FileText, User, AlertCircle, Save, Trash2, Printer, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Patient, Appointment, MedicalHistory, Hospital, ClinicalSession } from '../../appointments/types';
+import type { Patient, Appointment, MedicalHistory, Hospital, ClinicalSession, ClinicProfile } from '../../appointments/types';
 import { logActivity } from '@/lib/audit';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { PatientFiles } from './PatientFiles';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +16,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
 import { formatTime } from '../../appointments/utils';
@@ -64,6 +66,8 @@ export const PatientClinicalRecord = ({
     const [patient, setPatient] = useState<Patient>(initialPatient);
     const [generalNotes, setGeneralNotes] = useState<string>(initialPatient.notes || '');
     const [selectedDetailApt, setSelectedDetailApt] = useState<Appointment | null>(null);
+    const [clinicProfile, setClinicProfile] = useState<ClinicProfile | null>(null);
+    const [showPrivacyModal, setShowPrivacyModal] = useState(false);
     const { appId } = useAuth();
 
     // History State
@@ -101,6 +105,165 @@ export const PatientClinicalRecord = ({
         normalizeForCompare(generalNotes) !== initialNotesStr ||
         normalizeForCompare({ name: patient.name, phone: patient.phone, email: patient.email }) !== initialCoreStr;
 
+
+    // Cargar perfil clínico para el PDF y aviso de privacidad
+    useEffect(() => {
+        if (!appId) return;
+        supabase
+            .from('clinic_settings')
+            .select('*')
+            .eq('app_id', appId)
+            .maybeSingle()
+            .then(({ data }) => {
+                if (data) setClinicProfile({
+                    appId: data.app_id,
+                    clinicName: data.clinic_name,
+                    doctorName: data.doctor_name,
+                    cedulaProfesional: data.cedula_profesional,
+                    especialidad: data.especialidad,
+                    institucionEgreso: data.institucion_egreso,
+                    telefonoClinica: data.telefono_clinica,
+                    direccionClinica: data.direccion_clinica,
+                    logoUrl: data.logo_url,
+                    avisoPrivacidad: data.aviso_privacidad,
+                });
+            });
+    }, [appId]);
+
+    // ── Imprimir en ventana nueva (sin interferencia de la UI) ──
+    const printReport = () => {
+        const doctorName = clinicProfile?.doctorName || 'DR. RESPONSABLE';
+        const clinicName = clinicProfile?.clinicName || 'MedicAdmin';
+        const especialidad = clinicProfile?.especialidad || 'Expediente Clínico';
+        const cedula = clinicProfile?.cedulaProfesional || '';
+        const telefono = clinicProfile?.telefonoClinica || '';
+        const today = new Date();
+        const todayStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
+
+        const calcAge = (dob: string | undefined) => {
+            if (!dob) return 'n/a';
+            const diff = Date.now() - new Date(dob).getTime();
+            return String(Math.floor(diff / (365.25 * 24 * 3600 * 1000)));
+        };
+
+        const sessions = (history.clinicalSessions || [])
+            .filter(s => s.content?.trim())
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        const sessionRows = sessions.map(s => {
+            const d = new Date(s.date);
+            const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+            return `
+                <div style="margin-bottom:14px; padding-left:12px; border-left:2px solid #cbd5e1;">
+                    <div style="font-size:8pt; font-weight:900; color:#1c334a; text-transform:uppercase; margin-bottom:4px;">
+                        Fecha: ${dateStr}${!s.finalized ? ' <span style="color:#f97316;font-style:italic;">(Borrador)</span>' : ''}
+                    </div>
+                    <div style="font-size:10pt; color:#374151; white-space:pre-wrap; font-family:Georgia,serif; font-style:italic; line-height:1.5;">${s.content || ''}</div>
+                </div>`;
+        }).join('');
+
+        const dobStr = history.dateOfBirth
+            ? (() => { const d = new Date(history.dateOfBirth); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
+            : 'n/a';
+
+        const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Expediente Clínico – ${patient.name}</title>
+  <style>
+    @page { margin: 0; }
+    body { font-family: Inter, Arial, sans-serif; font-size: 10pt; color: #111; background: white; margin: 0; padding: 1.5cm; }
+    * { box-sizing: border-box; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1c334a; padding-bottom: 8px; margin-bottom: 12px; }
+    .header-left h1 { margin: 0; font-size: 14pt; font-weight: 900; color: #1c334a; text-transform: uppercase; letter-spacing: -0.5px; }
+    .header-left p { margin: 2px 0 0; font-size: 8pt; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 1px; }
+    .header-right { text-align: right; font-size: 8pt; color: #9ca3af; }
+    .header-right p { margin: 1px 0; }
+    .header-right .clinic { font-weight: 700; color: #374151; text-transform: uppercase; }
+    .sub-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; padding: 0 4px; }
+    .sub-header h2 { margin: 0; font-size: 9pt; font-weight: 900; color: #1c334a; text-transform: uppercase; border-bottom: 2px solid #1c334a; padding-bottom: 2px; }
+    .sub-header .date { font-size: 8pt; color: #9ca3af; }
+    .id-card { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+    .id-card label { display: block; font-size: 7pt; font-weight: 900; color: #9ca3af; text-transform: uppercase; margin-bottom: 2px; }
+    .id-card p { margin: 0; font-size: 9pt; font-weight: 700; color: #1f2937; }
+    .allergy-box { display: flex; align-items: center; gap: 8px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 6px 10px; margin-bottom: 12px; }
+    .allergy-label { font-size: 7pt; font-weight: 900; color: #dc2626; background: #fee2e2; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; }
+    .allergy-text { font-size: 9pt; font-weight: 700; color: #7f1d1d; }
+    .section-title { font-size: 8pt; font-weight: 900; color: #9ca3af; text-transform: uppercase; letter-spacing: 1.5px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; margin-bottom: 8px; }
+    .antec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; margin-bottom: 14px; }
+    .antec-item { font-size: 9pt; }
+    .antec-item .label { font-size: 7pt; font-weight: 900; color: #4b5563; text-transform: uppercase; margin-right: 4px; }
+    .sessions { margin-bottom: 16px; }
+    .footer { display: flex; justify-content: space-between; align-items: flex-end; border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 24px; }
+    .footer-note { font-size: 7pt; color: #d1d5db; font-style: italic; }
+    .firma { text-align: center; min-width: 200px; }
+    .firma .line { border-bottom: 1px solid #6b7280; margin-bottom: 4px; }
+    .firma .name { font-size: 9pt; font-weight: 900; text-transform: uppercase; color: #374151; }
+    .firma .role { font-size: 7pt; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <h1>${doctorName}</h1>
+      <p>${especialidad}${cedula ? ` &middot; Cédula: ${cedula}` : ''}</p>
+    </div>
+    <div class="header-right">
+      <p class="clinic">${clinicName}</p>
+      ${telefono ? `<p>Tel: ${telefono}</p>` : ''}
+    </div>
+  </div>
+
+  <div class="sub-header">
+    <h2>HISTORIA CLÍNICA CONSOLIDADA</h2>
+    <span class="date">Fecha de emisión: ${todayStr}</span>
+  </div>
+
+  <div class="id-card">
+    <div><label>Nombre Completo</label><p>${patient.name}</p></div>
+    <div><label>F. Nacimiento</label><p>${dobStr} (${calcAge(history.dateOfBirth)} años)</p></div>
+    <div><label>CURP / Sexo</label><p>${history.curp || 'n/a'} &middot; ${history.sex || 'n/a'}</p></div>
+    ${history.bloodType ? `<div><label>Grupo Sanguíneo</label><p>${history.bloodType}</p></div>` : ''}
+  </div>
+
+  ${history.allergies ? `
+  <div class="allergy-box">
+    <span class="allergy-label">Alergias</span>
+    <span class="allergy-text">${history.allergies}</span>
+  </div>` : ''}
+
+  <div class="section-title">Resumen de Antecedentes</div>
+  <div class="antec-grid">
+    <div class="antec-item"><span class="label">Patológicos:</span>${history.pathologicalHistory || 'Negados'}</div>
+    <div class="antec-item"><span class="label">No Patológicos:</span>${history.nonPathologicalHistory || 'Negados'}</div>
+    <div class="antec-item"><span class="label">Heredofamiliares:</span>${history.familyHistory || 'Negados'}</div>
+    <div class="antec-item"><span class="label">Quirúrgicos:</span>${history.surgeries || 'Negados'}</div>
+  </div>
+
+  <div class="section-title">Crónica de Evolución (Notas Médicas)</div>
+  <div class="sessions">
+    ${sessionRows || '<p style="font-size:9pt;color:#9ca3af;font-style:italic;">Sin notas de evolución registradas.</p>'}
+  </div>
+
+  <div class="footer">
+    <div class="footer-note">Generado por MedicAdmin &middot; NOM-024-SSA3-2012</div>
+    <div class="firma">
+      <div class="line">&nbsp;</div>
+      <div class="name">${doctorName}</div>
+      <div class="role">Responsable Clínico</div>
+    </div>
+  </div>
+</body>
+</html>`;
+
+        const win = window.open('', '_blank', 'width=900,height=700');
+        if (!win) { alert('Permite las ventanas emergentes para imprimir.'); return; }
+        win.document.write(html);
+        win.document.close();
+        win.focus();
+        setTimeout(() => { win.print(); win.close(); }, 400);
+    };
 
     useEffect(() => {
         // Only reset if the patient ID changed
@@ -365,8 +528,10 @@ export const PatientClinicalRecord = ({
     });
 
     return (
-        <div className="flex flex-col gap-6 pb-24">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="min-h-screen bg-slate-50/50">
+            {/* ── INTERFAZ DE PANTALLA (Oculta al imprimir) ── */}
+            <div className="print-hidden flex flex-col gap-6 pb-24 px-4 lg:px-8 max-w-7xl mx-auto py-8">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
                 {/* --- COLUMN 1: LEFT (3/12) --- */}
                 <div className="lg:col-span-3 flex flex-col gap-6">
@@ -597,6 +762,25 @@ export const PatientClinicalRecord = ({
                 {/* --- COLUMN 3: RIGHT (3/12) --- */}
                 <div className="lg:col-span-3 flex flex-col gap-6">
                     
+                    <div className="flex flex-col gap-2">
+                        <Button
+                            onClick={printReport}
+                            variant="outline"
+                            className="w-full h-11 text-[#1c334a] border-[#1c334a] hover:bg-[#1c334a]/5 font-bold text-sm shadow-sm transition-all"
+                        >
+                            <Printer className="w-4 h-4 mr-2" />
+                            Imprimir Expediente
+                        </Button>
+                        <Button
+                            onClick={() => setShowPrivacyModal(true)}
+                            variant="ghost"
+                            className="w-full h-9 text-gray-500 hover:text-[#1c334a] text-[10px] font-bold uppercase tracking-wider"
+                        >
+                            <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+                            Ver Aviso de Privacidad
+                        </Button>
+                    </div>
+
                     <Button 
                         onClick={() => handleSaveAll()} 
                         className="w-full h-14 text-white bg-[#1c334a] hover:bg-[#2a4560] font-bold text-base shadow-lg group transition-all"
@@ -991,7 +1175,7 @@ export const PatientClinicalRecord = ({
             })()}
 
             {/* Unsaved Changes Banner */}
-            <div className={`fixed bottom-0 left-0 right-0 bg-white border-t border-orange-200 px-6 py-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-50 flex justify-between items-center transition-transform duration-300 ${hasUnsavedChanges ? 'translate-y-0' : 'translate-y-full'}`}>
+            <div className={`print-hidden fixed bottom-0 left-0 right-0 bg-white border-t border-orange-200 px-6 py-4 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-50 flex justify-between items-center transition-transform duration-300 ${hasUnsavedChanges ? 'translate-y-0' : 'translate-y-full'}`}>
                 <div className="flex items-center gap-3">
                     <AlertCircle className="w-6 h-6 text-orange-500 shrink-0" />
                     <div>
@@ -1014,6 +1198,156 @@ export const PatientClinicalRecord = ({
                 onUpdate={handleUpdateAppointment}
                 getAvailableSlots={getAvailableSlots || (() => [])}
             />
+
+
+            {/* ═ MODAL: Aviso de Privacidad (Oculto al imprimir) ═ */}
+            <div className="print-hidden">
+                <Dialog open={showPrivacyModal} onOpenChange={setShowPrivacyModal}>
+                    <DialogContent className="max-w-2xl bg-white rounded-2xl p-0 overflow-hidden">
+                        <DialogHeader className="bg-[#1c334a] text-white p-6">
+                            <DialogTitle className="flex items-center gap-2 text-xl">
+                                <ShieldCheck className="w-6 h-6" />
+                                Aviso de Privacidad
+                            </DialogTitle>
+                            <DialogDescription className="text-blue-100/70 text-xs">
+                                Ley Federal de Protección de Datos Personales en Posesión de los Particulares
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="p-8 max-h-[60vh] overflow-y-auto">
+                            <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
+                                {clinicProfile?.avisoPrivacidad || 'No se ha configurado un aviso de privacidad. Ve a Configuración para añadir uno.'}
+                            </p>
+                        </div>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            </div>
+
+            {/* ═══════════════════════════════════════════════════════
+                 REPORTE CLÍNICO PARA IMPRESIÓN (Invisible en pantalla)
+                 ═══════════════════════════════════════════════════════ */}
+            <div className="print-only p-4 bg-white text-gray-900 font-sans leading-tight" style={{ fontSize: '10pt' }}>
+                
+                {/* Header Médico Compacto */}
+                <div className="flex justify-between items-center border-b-[1px] border-gray-400 pb-2 mb-4">
+                    <div>
+                        <h1 className="text-lg font-black text-[#1c334a] uppercase tracking-tighter">
+                            {clinicProfile?.doctorName || 'DR. RESPONSABLE'}
+                        </h1>
+                        <p className="text-[8pt] font-bold text-gray-500 uppercase tracking-widest">
+                            {clinicProfile?.especialidad || 'Expediente Clínico'} {clinicProfile?.cedulaProfesional && `· Cédula: ${clinicProfile?.cedulaProfesional}`}
+                        </p>
+                    </div>
+                    <div className="text-right text-[8pt] text-gray-400">
+                        <p className="font-bold text-gray-600 uppercase">{clinicProfile?.clinicName || 'MedicAdmin'}</p>
+                        {clinicProfile?.telefonoClinica && <p>Tel: {clinicProfile?.telefonoClinica}</p>}
+                    </div>
+                </div>
+
+                {/* Subcabecera de Identificación */}
+                <div className="flex justify-between items-end mb-4 px-2">
+                    <h2 className="text-[9pt] font-black text-[#1c334a] uppercase tracking-widest border-b-2 border-[#1c334a]">
+                        HISTORIA CLÍNICA CONSOLIDADA
+                    </h2>
+                    <p className="text-[8pt] font-medium text-gray-400">
+                        Fecha de emisión: {format(new Date(), "dd/MM/yyyy")}
+                    </p>
+                </div>
+
+                {/* Ficha de Identificación del Paciente (3 Columnas) */}
+                <div className="grid grid-cols-3 gap-x-4 gap-y-2 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <div className="col-span-1">
+                        <label className="text-[7pt] font-black text-gray-400 uppercase">Nombre Completo</label>
+                        <p className="text-[10pt] font-bold text-gray-800">{patient.name}</p>
+                    </div>
+                    <div className="col-span-1">
+                        <label className="text-[7pt] font-black text-gray-400 uppercase">Fecha de Nacimiento</label>
+                        <p className="text-[9pt] font-semibold text-gray-700">{history.dateOfBirth ? format(parseISO(history.dateOfBirth), 'dd/MM/yyyy') : 'n/a'} ({calculateAge(history.dateOfBirth) || 'n/a'} años)</p>
+                    </div>
+                    <div className="col-span-1">
+                        <label className="text-[7pt] font-black text-gray-400 uppercase">CURP / Sexo</label>
+                        <p className="text-[9pt] font-semibold text-gray-700">{history.curp || 'n/a'} · {history.sex || 'n/a'}</p>
+                    </div>
+                    {history.bloodType && (
+                        <div className="col-span-1">
+                            <label className="text-[7pt] font-black text-gray-400 uppercase">Grupo Sanguíneo</label>
+                            <p className="text-[9pt] font-semibold text-gray-700">{history.bloodType}</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Alergias (Solo si existen, muy compacto) */}
+                {history.allergies && (
+                    <div className="mb-4 flex items-start gap-2 bg-red-50 p-2 rounded border border-red-100">
+                        <span className="text-[7pt] font-black text-red-600 bg-red-100 px-1.5 py-0.5 rounded uppercase self-center tracking-tighter">Alergias</span>
+                        <p className="text-[9pt] font-bold text-red-900">{history.allergies}</p>
+                    </div>
+                )}
+
+                {/* Antecedentes Clínicos Densos */}
+                <div className="mb-6">
+                    <h3 className="text-[8pt] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 mb-2">Resumen de Antecedentes</h3>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                        <div className="text-[9pt]">
+                            <span className="font-bold text-gray-600 uppercase text-[7pt] mr-2">Patológicos:</span>
+                            <span className="text-gray-700">{history.pathologicalHistory || 'Negados'}</span>
+                        </div>
+                        <div className="text-[9pt]">
+                            <span className="font-bold text-gray-600 uppercase text-[7pt] mr-2">No Patológicos:</span>
+                            <span className="text-gray-700">{history.nonPathologicalHistory || 'Negados'}</span>
+                        </div>
+                        <div className="text-[9pt]">
+                            <span className="font-bold text-gray-600 uppercase text-[7pt] mr-2">Heredofamiliares:</span>
+                            <span className="text-gray-700">{history.familyHistory || 'Negados'}</span>
+                        </div>
+                        <div className="text-[9pt]">
+                            <span className="font-bold text-gray-600 uppercase text-[7pt] mr-2">Quirúrgicos:</span>
+                            <span className="text-gray-700">{history.surgeries || 'Negados'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Notas de Evolución Cronológicas */}
+                <div className="mb-8">
+                    <h3 className="text-[8pt] font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 mb-4">Crónica de Evolución (Notas Médicas)</h3>
+                    
+                    <div className="space-y-4">
+                        {(history.clinicalSessions || [])
+                            .filter(s => s.content?.trim() || s.finalized) // Incluir cualquier nota con contenido aunque no esté "finalizada"
+                            .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                            .map((s, idx) => (
+                            <div key={idx} className="relative pl-4 border-l-[1px] border-gray-300 pb-2">
+                                <span className="absolute -left-1 top-0 w-2 h-2 rounded-full bg-gray-400" />
+                                <div className="flex justify-between items-baseline mb-1">
+                                    <p className="text-[8pt] font-black text-gray-800 uppercase">
+                                        Fecha: {format(parseISO(s.date), "dd/MM/yyyy")}
+                                    </p>
+                                    {!s.finalized && <span className="text-[7pt] text-orange-500 font-black uppercase italic tracking-tighter">Borrador</span>}
+                                </div>
+                                <div className="text-[10pt] text-gray-700 leading-snug whitespace-pre-wrap font-serif italic antialiased">
+                                    {s.content || <span className="text-gray-400 italic">(Sin contenido guardado aún)</span>}
+                                </div>
+                            </div>
+                        ))}
+                        {(!history.clinicalSessions || history.clinicalSessions.filter(s => s.content?.trim()).length === 0) && (
+                            <p className="text-sm italic text-gray-300">No se encontraron notas médicas guardadas en el historial.</p>
+                        )}
+                    </div>
+                </div>
+
+                {/* Firma y Cierre Compacto */}
+                <div className="mt-12 flex justify-between items-end border-t border-gray-100 pt-4">
+                    <div className="text-[7pt] text-gray-300 italic">
+                        Generado por MedicAdmin · NOM-024-SSA3-2012
+                    </div>
+                    <div className="text-center min-w-[200px]">
+                        <div className="w-full border-b border-gray-400 mb-1" />
+                        <p className="text-[9pt] font-black text-gray-700 uppercase">{clinicProfile?.doctorName || 'Firma del Médico'}</p>
+                        <p className="text-[7pt] text-gray-400 font-bold uppercase tracking-widest">Responsable Clínico</p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

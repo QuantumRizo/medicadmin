@@ -362,12 +362,12 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                                             </Button>
                                                             <Button
                                                                 size="sm"
-                                                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl h-10 px-4 font-bold shadow-sm transition-all active:scale-95 border-none"
+                                                                className="bg-[#1c334a] hover:bg-[#1e293b] text-white rounded-xl h-10 px-4 font-bold shadow-lg shadow-slate-200 transition-all active:scale-95 border-none"
                                                                 onClick={() => navigate(`/admin/pacientes/${patient.id}#notas-evolucion`)}
                                                                 title="Notas de Evolución"
                                                             >
                                                                 <NotebookPen className="w-4 h-4 mr-2" />
-                                                                Notas
+                                                                Notas Evolución
                                                             </Button>
                                                             <Button
                                                                 size="sm"
@@ -440,12 +440,11 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
 
                                                 <Button
                                                     size="sm"
-                                                    variant="outline"
-                                                    className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 h-10"
+                                                    className="w-full bg-[#1c334a] hover:bg-[#1e293b] text-white shadow-sm h-10 border-none transition-all active:scale-95"
                                                     onClick={() => navigate(`/admin/pacientes/${patient.id}#notas-evolucion`)}
                                                 >
                                                     <NotebookPen className="w-4 h-4 mr-1.5" />
-                                                    Notas
+                                                    Notas Evolución
                                                 </Button>
 
                                                 <Button
