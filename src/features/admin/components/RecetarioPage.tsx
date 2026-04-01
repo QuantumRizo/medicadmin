@@ -40,7 +40,7 @@ export const RecetarioPage = () => {
     const [patientName, setPatientName] = useState('');
     const [patientAge, setPatientAge] = useState('');
     const [patientSex, setPatientSex] = useState('');
-    const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
     
     const [diagnosis, setDiagnosis] = useState('');
     const [medications, setMedications] = useState<Medication[]>([emptyMed()]);

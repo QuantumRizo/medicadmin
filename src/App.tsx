@@ -2,9 +2,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
 import Admin from "./pages/Admin";
 import Login from "./pages/Login";
-import { Button } from "@/components/ui/button";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import UpdatePassword from "./pages/UpdatePassword";
 import PatientRecordPage from "./pages/PatientRecordPage";
 
 const queryClient = new QueryClient();
@@ -55,8 +58,11 @@ const App = () => (
           <Toaster />
           <BrowserRouter>
             <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
-            <Route path="/login" element={<Login />} />
+              <Route path="/" element={<Navigate to="/login" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/update-password" element={<UpdatePassword />} />
               <Route
                 path="/admin"
                 element={

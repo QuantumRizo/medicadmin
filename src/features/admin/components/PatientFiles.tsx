@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
-import { FileText, Upload, Trash2, Loader2, ExternalLink } from 'lucide-react';
+import { FileText, Upload, Trash2, Loader2, ExternalLink, Lock, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PatientFile {
     id: string;
@@ -24,6 +25,7 @@ interface PatientFilesProps {
 }
 
 export const PatientFiles = ({ patientId }: PatientFilesProps) => {
+    const { canUploadFiles } = useAuth();
     const [files, setFiles] = useState<PatientFile[]>([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
@@ -179,6 +181,7 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
     return (
         <div className="space-y-6">
             {/* Upload Section */}
+            {canUploadFiles ? (
             <Card className="bg-slate-50 border-dashed border-2 border-slate-200">
                 <CardHeader>
                     <CardTitle className="text-lg">Subir Nuevo Archivo</CardTitle>
@@ -238,6 +241,33 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                     </div>
                 </CardContent>
             </Card>
+            ) : (
+                <Card className="bg-gradient-to-br from-slate-50 to-blue-50/30 border border-blue-100 overflow-hidden relative shadow-sm">
+                    <div className="absolute top-0 right-0 p-4 opacity-10">
+                        <Lock className="w-32 h-32" />
+                    </div>
+                    <CardContent className="p-10 flex flex-col items-center justify-center text-center space-y-4 relative z-10">
+                        <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center mb-2 border border-blue-50">
+                            <Lock className="w-8 h-8 text-[#1c334a]" />
+                        </div>
+                        <h3 className="text-xl font-extrabold text-[#1c334a] flex items-center gap-2">
+                            Almacenamiento Clínico
+                            <span className="bg-gradient-to-r from-amber-200 to-yellow-400 text-yellow-900 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-sm">
+                                <Sparkles className="w-3 h-3" /> Premium
+                            </span>
+                        </h3>
+                        <p className="text-sm text-slate-500 max-w-md font-medium leading-relaxed">
+                            La subida de estudios médicos, radiografías y documentos directamente al expediente del paciente es una función exclusiva.
+                        </p>
+                        <Button 
+                            className="mt-6 bg-[#1c334a] hover:bg-[#2a4560] text-white font-bold shadow-xl shadow-slate-200 transition-all hover:-translate-y-0.5 rounded-xl px-8 h-12"
+                            onClick={() => toast.info("Contacta al administrador para habilitar esta función en tu cuenta.")}
+                        >
+                            Solicitar Activación
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Files List */}
             <div className="space-y-4">
@@ -280,6 +310,7 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                                                     <ExternalLink className="w-4 h-4" />
                                                 </a>
                                             </Button>
+                                            {canUploadFiles && (
                                             <Button
                                                 size="icon"
                                                 variant="destructive"
@@ -288,6 +319,7 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
+                                            )}
                                         </div>
                                     </div>
                                     <CardContent className="p-3 space-y-1">

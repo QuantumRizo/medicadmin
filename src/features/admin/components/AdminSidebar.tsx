@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X, Settings, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X, Settings, ClipboardList, CreditCard } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from './GlobalSearch';
 
@@ -24,6 +24,7 @@ export const AdminSidebar = ({
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
         { id: 'prescriptions', label: 'Recetario', icon: ClipboardList },
+        { id: 'subscription', label: 'Suscripción', icon: CreditCard },
     ];
 
     return (

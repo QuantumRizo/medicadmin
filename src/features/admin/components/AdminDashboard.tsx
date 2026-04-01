@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, Calendar as CalendarIcon, Users, Lock, CalendarPlus, UserPlus } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Users, Lock, CalendarPlus, UserPlus, CreditCard } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { AdminOverview } from './AdminOverview';
@@ -14,6 +14,7 @@ import { BookingTypeDialog } from './BookingTypeDialog';
 import { AdminLayout } from './AdminLayout';
 import { ClinicSettingsPage } from './ClinicSettingsPage';
 import { RecetarioPage } from './RecetarioPage';
+import { SubscriptionPage } from './SubscriptionPage';
 import { useSearchParams } from 'react-router-dom';
 
 export const AdminDashboard = () => {
@@ -65,6 +66,7 @@ export const AdminDashboard = () => {
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
         { id: 'prescriptions', label: 'Recetario', icon: LayoutDashboard },
+        { id: 'subscription', label: 'Suscripción', icon: CreditCard },
         { id: 'settings', label: 'Configuración', icon: LayoutDashboard },
     ];
 
@@ -197,6 +199,10 @@ export const AdminDashboard = () => {
 
                 <TabsContent value="prescriptions" className="mt-0 focus-visible:outline-none outline-none border-none p-6">
                     <RecetarioPage />
+                </TabsContent>
+
+                <TabsContent value="subscription" className="mt-0 focus-visible:outline-none outline-none border-none p-6">
+                    <SubscriptionPage />
                 </TabsContent>
             </Tabs>
 

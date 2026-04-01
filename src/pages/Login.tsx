@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Lock, Stethoscope, User, History, ClipboardPlus, FileText } from 'lucide-react';
@@ -149,6 +149,12 @@ const Login = () => {
                                     <label className="text-sm font-semibold text-slate-700">
                                         Contraseña
                                     </label>
+                                    <Link 
+                                        to="/forgot-password" 
+                                        className="text-xs font-semibold text-sky-600 hover:text-sky-700 hover:underline transition-all"
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </Link>
                                 </div>
                                 <Input
                                     type="password"
@@ -178,9 +184,15 @@ const Login = () => {
                     </div>
 
                     {/* Footer */}
-                    <div className="mt-12 text-center">
-                        <p className="text-slate-400 text-sm">
-                            © 2026 MedicAdmin. Todos los derechos reservados.
+                    <div className="mt-12 text-center space-y-4">
+                        <p className="text-sm text-slate-500">
+                            ¿No tienes una cuenta?{' '}
+                            <Link to="/register" className="text-sky-600 font-bold hover:underline">
+                                Regístrate Gratis
+                            </Link>
+                        </p>
+                        <p className="text-slate-400 text-[10px] uppercase tracking-widest font-medium">
+                            © 2026 MedicAdmin. Protección NOM-024.
                         </p>
                     </div>
                 </div>

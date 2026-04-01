@@ -6,6 +6,10 @@ interface AuthContextType {
     user: User | null;
     appId: string | null;
     fullName: string | null;
+    canUploadFiles: boolean;
+    subscriptionStatus: string;
+    planName: string;
+    trialEndsAt: string | null;
     loading: boolean;
     signOut: () => Promise<void>;
 }
@@ -16,6 +20,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [user, setUser] = useState<User | null>(null);
     const [appId, setAppId] = useState<string | null>(null);
     const [fullName, setFullName] = useState<string | null>(null);
+    const [canUploadFiles, setCanUploadFiles] = useState<boolean>(false);
+    const [subscriptionStatus, setSubscriptionStatus] = useState<string>('trial');
+    const [planName, setPlanName] = useState<string>('Free');
+    const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -37,6 +45,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
                 setAppId(null);
                 setFullName(null);
+                setCanUploadFiles(false);
+                setSubscriptionStatus('trial');
+                setPlanName('Free');
+                setTrialEndsAt(null);
                 setLoading(false);
             }
         });
@@ -49,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('app_id, full_name')
+                .select('app_id, full_name, can_upload_files, subscription_status, plan_name, trial_ends_at')
                 .eq('id', userId)
                 .single();
 
@@ -58,6 +70,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (data) {
                 setAppId(data.app_id);
                 setFullName(data.full_name);
+                setCanUploadFiles(data.can_upload_files || false);
+                setSubscriptionStatus(data.subscription_status || 'trial');
+                setPlanName(data.plan_name || 'Free');
+                setTrialEndsAt(data.trial_ends_at || null);
             }
         } catch (error) {
             console.error('Error fetching profile:', error);
@@ -71,7 +87,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, appId, fullName, loading, signOut }}>
+        <AuthContext.Provider value={{ 
+            user, 
+            appId, 
+            fullName, 
+            canUploadFiles, 
+            subscriptionStatus, 
+            planName, 
+            trialEndsAt, 
+            loading, 
+            signOut 
+        }}>
             {children}
         </AuthContext.Provider>
     );

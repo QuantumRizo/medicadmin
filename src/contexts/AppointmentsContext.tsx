@@ -23,6 +23,12 @@ interface AppointmentsContextType {
     blockSlot: (hospitalId: string, date: string, time: string) => Promise<void>;
     updateAppointment: (appointmentId: string, updates: Partial<Appointment>) => Promise<void>;
     addPatient: (patientData: { name: string, email: string, phone: string, notes?: string }) => Promise<Patient>;
+    
+    // Hospital CRUD
+    addHospital: (hospital: Omit<Hospital, 'id'>) => Promise<void>;
+    updateHospital: (hospitalId: string, updates: Partial<Hospital>) => Promise<void>;
+    deleteHospital: (hospitalId: string) => Promise<void>;
+    
     services: typeof SERVICES;
 }
 
@@ -343,6 +349,77 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
+    const addHospital = async (hospital: Omit<Hospital, 'id'>) => {
+        if (!APP_ID) return;
+        try {
+            const { error } = await supabase.from('hospitals').insert([{
+                app_id: APP_ID,
+                name: hospital.name,
+                address: hospital.address,
+                start_time: hospital.startTime,
+                end_time: hospital.endTime,
+                slot_interval: hospital.slotInterval,
+                is_dental_clinic: hospital.isDentalClinic
+            }]);
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error adding hospital:', error);
+            throw error;
+        }
+    };
+
+    const updateHospital = async (hospitalId: string, updates: Partial<Hospital>) => {
+        if (!APP_ID) return;
+        try {
+            const dbUpdates: any = {};
+            if (updates.name) dbUpdates.name = updates.name;
+            if (updates.address) dbUpdates.address = updates.address;
+            if (updates.startTime) dbUpdates.start_time = updates.startTime;
+            if (updates.endTime) dbUpdates.end_time = updates.endTime;
+            if (updates.slotInterval) dbUpdates.slot_interval = updates.slotInterval;
+            if (updates.isDentalClinic !== undefined) dbUpdates.is_dental_clinic = updates.isDentalClinic;
+
+            const { error } = await supabase
+                .from('hospitals')
+                .update(dbUpdates)
+                .eq('id', hospitalId)
+                .eq('app_id', APP_ID);
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error updating hospital:', error);
+            throw error;
+        }
+    };
+
+    const deleteHospital = async (hospitalId: string) => {
+        if (!APP_ID) return;
+        try {
+            // Check if there are appointments for this hospital
+            const { data } = await supabase
+                .from('appointments')
+                .select('id')
+                .eq('hospital_id', hospitalId)
+                .eq('app_id', APP_ID)
+                .limit(1);
+            
+            if (data && data.length > 0) {
+                throw new Error("No se puede eliminar una sucursal que tiene citas agendadas.");
+            }
+
+            const { error } = await supabase
+                .from('hospitals')
+                .delete()
+                .eq('id', hospitalId)
+                .eq('app_id', APP_ID);
+            
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error deleting hospital:', error);
+            throw error;
+        }
+    };
+
     const addPatient = async (patientData: { name: string, email: string, phone: string, notes?: string }) => {
         try {
             const safePhone = standardizePhone(patientData.phone);
@@ -408,6 +485,9 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         blockSlot,
         updateAppointment,
         addPatient,
+        addHospital,
+        updateHospital,
+        deleteHospital,
         services: SERVICES
     };
 

@@ -297,7 +297,7 @@ export const PatientClinicalRecord = ({
         if (sessions.length === 0 && generalNotes?.trim()) {
             const migrated: ClinicalSession = {
                 id: crypto.randomUUID(),
-                date: new Date().toISOString().split('T')[0],
+                date: format(new Date(), 'yyyy-MM-dd'),
                 content: generalNotes.trim(),
                 finalized: false,
             };
@@ -1055,7 +1055,7 @@ export const PatientClinicalRecord = ({
                             ...sessions,
                             {
                                 id: crypto.randomUUID(),
-                                date: new Date().toISOString().split('T')[0],
+                                date: format(new Date(), 'yyyy-MM-dd'),
                                 content,
                                 finalized: false,
                             }

@@ -9,12 +9,15 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
 import { formatTime } from '../../appointments/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
 import type { Appointment } from '../../appointments/types';
 
 interface AdminOverviewProps { }
 
 export const AdminOverview = ({ }: AdminOverviewProps) => {
     const { appointments, patients, hospitals, updateAppointment, getAvailableSlots, deleteAppointment } = useAppointments();
+    const { fullName } = useAuth();
 
     const [selectedDetailApt, setSelectedDetailApt] = useState<Appointment | null>(null);
 
@@ -62,9 +65,38 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
         appointments.map(a => a.patientId)
     ).size;
 
+    const isNewUser = fullName === 'Nuevo Doctor' || hospitals.some(h => h.name === 'Consultorio Principal');
+
     return (
         <>
-            <div className="space-y-4 animate-fade-in max-w-full overflow-hidden px-1 sm:px-0">
+            <div className="space-y-6 animate-fade-in max-w-full overflow-hidden px-1 sm:px-0">
+                {/* Onboarding Alert */}
+                {isNewUser && (
+                    <Card className="border-none shadow-xl shadow-sky-500/10 bg-gradient-to-r from-sky-600 to-[#1c334a] overflow-hidden relative group">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                            <Sparkles className="w-32 h-32 text-white" />
+                        </div>
+                        <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-center gap-6 relative z-10 text-white text-center sm:text-left">
+                            <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center shrink-0 border border-white/20">
+                                <AlertCircle className="w-8 h-8 text-sky-200" />
+                            </div>
+                            <div className="flex-1 space-y-1">
+                                <h3 className="text-xl font-black tracking-tight">¡Bienvenido a tu nueva Clínica Digital!</h3>
+                                <p className="text-sky-100 text-sm font-medium opacity-90 max-w-2xl">
+                                    Hemos creado un consultorio base para que la agenda funcione de inmediato. Te recomendamos personalizar el nombre de tu clínica, dirección y horarios en la configuración.
+                                </p>
+                            </div>
+                            <Button 
+                                onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'settings' }))}
+                                className="bg-white text-[#1c334a] hover:bg-sky-50 rounded-xl font-bold px-6 h-12 shadow-lg shadow-black/10 group/btn shrink-0"
+                            >
+                                Configurar Ahora
+                                <ArrowRight className="w-4 h-4 ml-2 group-hover/btn:translate-x-1 transition-transform" />
+                            </Button>
+                        </CardContent>
+                    </Card>
+                )}
+
                 {/* KPI Grid - Stacked on very small, 2 cols on mobile, 4 on desktop */}
                 <div className="grid gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">
                     <Card className="rounded-2xl shadow-xl shadow-slate-200/50 border-none bg-white transition-all hover:translate-y-[-2px]">
@@ -297,7 +329,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                 patient={patients.find(p => p.id === selectedDetailApt?.patientId)}
                 hospitals={hospitals}
                 isOpen={!!selectedDetailApt}
-                onOpenChange={(open) => !open && setSelectedDetailApt(null)}
+                onOpenChange={(open: boolean) => !open && setSelectedDetailApt(null)}
                 onDelete={handleDeleteAppointment}
                 onUpdate={handleUpdateAppointment}
                 getAvailableSlots={getAvailableSlots}
