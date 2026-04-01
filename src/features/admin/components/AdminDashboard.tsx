@@ -12,6 +12,7 @@ import { AddPatientDialog } from './AddPatientDialog';
 import { AdminAppointmentDialog } from './AdminAppointmentDialog';
 import { BookingTypeDialog } from './BookingTypeDialog';
 import { AdminLayout } from './AdminLayout';
+import { ClinicSettingsPage } from './ClinicSettingsPage';
 import { useSearchParams } from 'react-router-dom';
 
 export const AdminDashboard = () => {
@@ -62,6 +63,7 @@ export const AdminDashboard = () => {
         { id: 'overview', label: 'Tablero', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
+        { id: 'settings', label: 'Configuración', icon: LayoutDashboard },
     ];
 
     const formatTime = (timeStr: string) => {
@@ -185,6 +187,10 @@ export const AdminDashboard = () => {
                             setIsAppointmentDialogOpen(true);
                         }}
                     />
+                </TabsContent>
+
+                <TabsContent value="settings" className="mt-0 focus-visible:outline-none outline-none border-none p-6">
+                    <ClinicSettingsPage />
                 </TabsContent>
             </Tabs>
 

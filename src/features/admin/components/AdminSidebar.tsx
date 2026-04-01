@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from './GlobalSearch';
 
@@ -59,6 +59,21 @@ export const AdminSidebar = ({
                             {item.label}
                         </button>
                     ))}
+
+                    {/* Divider + Configuración */}
+                    <div className="pt-2 border-t border-white/5">
+                        <button
+                            onClick={() => { onTabChange('settings'); setIsMobileMenuOpen(false); }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                                currentTab === 'settings'
+                                    ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/20'
+                                    : 'hover:bg-white/5 hover:text-white'
+                            }`}
+                        >
+                            <Settings className={`w-5 h-5 ${currentTab === 'settings' ? 'text-white' : 'text-slate-400'}`} />
+                            Configuración
+                        </button>
+                    </div>
                 </nav>
 
                 {/* Footer Session */}

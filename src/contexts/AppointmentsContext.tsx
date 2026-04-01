@@ -6,6 +6,7 @@ import type { Appointment, Patient, Hospital } from '../features/appointments/ty
 import { isAppointmentPast } from '@/lib/dateUtils';
 import { standardizePhone } from '@/lib/utils';
 import { useAuth } from './AuthContext';
+import { logActivity } from '@/lib/audit';
 
 interface AppointmentsContextType {
     appointments: Appointment[];
@@ -219,6 +220,8 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 throw error;
             }
             console.log(`[Supabase] Patient ${patient.id} updated successfully.`);
+            // NOM-024: Log de guardado (no bloqueante)
+            logActivity({ appId: APP_ID, patientId: patient.id, action: 'SAVE_RECORD' });
         } catch (error) {
             console.error('Error in updatePatient:', error);
             throw error;
@@ -273,6 +276,8 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
 
     const deletePatient = async (patientId: string) => {
         try {
+            // NOM-024: Log antes de borrar
+            if (APP_ID) logActivity({ appId: APP_ID, patientId, action: 'DELETE_PATIENT' });
             await supabase.from('appointments').delete().eq('patient_id', patientId);
             const { error: patientError } = await supabase.from('patients').delete().eq('id', patientId);
             if (patientError) throw patientError;

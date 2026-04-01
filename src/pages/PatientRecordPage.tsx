@@ -1,4 +1,5 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAppointments } from '@/features/appointments/hooks/useAppointments';
 import { PatientClinicalRecord } from '@/features/admin/components/PatientClinicalRecord';
 import { AdminLayout } from '@/features/admin/components/AdminLayout';
@@ -8,7 +9,20 @@ import { ArrowLeft } from 'lucide-react';
 const PatientRecordPage = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
     const { patients, appointments, updatePatient, deleteAppointment, updateAppointment, getAvailableSlots, loading, hospitals, fetchData } = useAppointments();
+
+    // Auto-scroll to hash anchor (e.g. #notas-evolucion) after page loads
+    useEffect(() => {
+        if (!loading && location.hash) {
+            const timer = setTimeout(() => {
+                const el = document.querySelector(location.hash);
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 400);
+            return () => clearTimeout(timer);
+        }
+    }, [loading, location.hash]);
+
 
     if (loading) {
         return <div className="p-8 text-center text-gray-500 bg-gray-50 min-h-screen">Cargando expediente...</div>;

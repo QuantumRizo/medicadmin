@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { format, isAfter, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Search, MapPin, Phone, Mail, Trash2, Calendar, ArrowRight, User, FileText, CalendarPlus } from 'lucide-react';
+import { Search, MapPin, Phone, Mail, Trash2, Calendar, ArrowRight, User, FileText, CalendarPlus, NotebookPen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
@@ -362,6 +362,15 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                                             </Button>
                                                             <Button
                                                                 size="sm"
+                                                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl h-10 px-4 font-bold shadow-sm transition-all active:scale-95 border-none"
+                                                                onClick={() => navigate(`/admin/pacientes/${patient.id}#notas-evolucion`)}
+                                                                title="Notas de Evolución"
+                                                            >
+                                                                <NotebookPen className="w-4 h-4 mr-2" />
+                                                                Notas
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
                                                                 className="bg-[#1e293b] hover:bg-[#0f172a] text-white rounded-xl h-10 px-4 font-bold shadow-lg shadow-slate-100 transition-all active:scale-95"
                                                                 onClick={() => handleOpenPatient(patient)}
                                                             >
@@ -414,7 +423,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                                 )}
                                             </div>
 
-                                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-50">
+                                            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-50">
                                                 <Button
                                                     size="sm"
                                                     className="w-full bg-[#1c334a] hover:bg-[#1e293b] text-white shadow-sm h-10 border-none transition-all active:scale-95"
@@ -427,6 +436,16 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                                                 >
                                                     <CalendarPlus className="w-4 h-4 mr-1.5" />
                                                     Agendar
+                                                </Button>
+
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 h-10"
+                                                    onClick={() => navigate(`/admin/pacientes/${patient.id}#notas-evolucion`)}
+                                                >
+                                                    <NotebookPen className="w-4 h-4 mr-1.5" />
+                                                    Notas
                                                 </Button>
 
                                                 <Button

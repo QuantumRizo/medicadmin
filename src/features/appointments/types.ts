@@ -20,6 +20,18 @@ export interface Service {
     price?: number;
 }
 
+// ──────────────────────────────────────────────────────────────
+// NOM-024: Sesión clínica — una entrada del cuaderno de notas.
+// Las sesiones finalizadas son inmutables (cumplimiento NOM-024).
+// ──────────────────────────────────────────────────────────────
+export interface ClinicalSession {
+    id: string;               // UUID generado en cliente
+    date: string;             // ISO date de creación de la sesión: "2026-04-01"
+    content: string;          // Texto de la nota de evolución
+    finalized: boolean;       // true = solo lectura, no editable
+    finalizedAt?: string;     // ISO timestamp cuando se finalizó
+}
+
 export interface MedicalHistory {
     // Datos Generales
     sex?: 'Masculino' | 'Femenino';
@@ -29,6 +41,7 @@ export interface MedicalHistory {
     homePhone?: string;
     officePhone?: string;
     occupation?: string;
+    curp?: string;            // CURP del paciente (opcional, recomendado NOM-004)
     address?: {
         street: string;
         number: string;
@@ -43,40 +56,41 @@ export interface MedicalHistory {
     sports?: string;
     recommendedBy?: string;
 
-    // Existing fields moved to General Data section in UI, keeping same keys
     bloodType?: string;
     allergies: string;
     conditions: string; // Enfermedades
     medications: string;
-    surgeries: string; // Not explicitly requested in "Datos Generales" list but good to keep, maybe in Clinical History? User said "Enfermedades q padece... toma medicamentos... recomendado por: y ya". 
-    // Wait, "Enfermedades q padece" is conditions. 
-    // I will keep surgeries available.
-    familyHistory: string; // Antecedentes Hereditarios - might map to "Antecedentes personales patológicos" or similar, but user asked for specific new sections in Clinical History.
-    // User asked for "Antecedentes personales no patológicos", "Antecedentes personales patológicos", etc.
-    // I will add the new Clinical History fields.
+    surgeries: string;
+    familyHistory: string;
 
-    // Historia Clínica (New Sections)
-    nonPathologicalHistory?: string; // Antecedentes personales no patológicos
-    pathologicalHistory?: string; // Antecedentes personales patológicos
-    gynecoObstetricHistory?: string; // Antecedentes gineco obstetricos
-    perinatalHistory?: string; // Antecedentes perinatales
-    currentCondition?: string; // Padecimiento actual
-    physicalExploration?: string; // Exploración física
-    labStudies?: string; // Estudios de laboratorio y gabinete
-    diagnosis?: string; // Diagnóstico
-    treatment?: string; // Tratamiento
-    prognosis?: string; // Pronóstico
+    // Historia Clínica
+    nonPathologicalHistory?: string;
+    pathologicalHistory?: string;
+    gynecoObstetricHistory?: string;
+    perinatalHistory?: string;
+    currentCondition?: string;
+    physicalExploration?: string;
+    labStudies?: string;
+    diagnosis?: string;
+    treatment?: string;
+    prognosis?: string;
     
     // Odontograma
-    odontogramData?: Record<number, Record<string, string>>; // Estado de cada cara de la pieza
-    odontogramNotes?: Record<number, string>; // Notas por diente: { 11: "Caries mesial profunda", ... }
+    odontogramData?: Record<number, Record<string, string>>;
+    odontogramNotes?: Record<number, string>;
+
+    // NOM-024: Notas de evolución por sesión (Opción A — cuaderno con entradas)
+    clinicalSessions?: ClinicalSession[];
+
+    // Legado: texto libre de notas (se migra a clinicalSessions si existe)
+    evolutionNotes?: string;
 }
 
 export interface SoapNote {
-    subjective: string; // Síntomas descritos por paciente
-    objective: string;  // Signos vitales, exploración física
-    analysis: string;   // Diagnóstico
-    plan: string;       // Tratamiento, estudios
+    subjective: string;
+    objective: string;
+    analysis: string;
+    plan: string;
 }
 
 export interface Patient {
@@ -84,10 +98,48 @@ export interface Patient {
     name: string;
     email: string;
     phone: string;
-    notes: string; // Internal notes for the doctor
-    history: string[]; // IDs of past appointments
-    medicalHistory?: MedicalHistory; // JSONB from DB
+    notes: string;
+    history: string[];
+    medicalHistory?: MedicalHistory;
     appId?: string;
+}
+
+// ──────────────────────────────────────────────────────────────
+// NOM-024: Perfil de la clínica / médico (tabla clinic_settings)
+// ──────────────────────────────────────────────────────────────
+export interface ClinicProfile {
+    id?: string;
+    appId: string;
+    clinicName?: string;
+    doctorName?: string;
+    cedulaProfesional?: string;
+    especialidad?: string;
+    institucionEgreso?: string;
+    telefonoClinica?: string;
+    direccionClinica?: string;
+    logoUrl?: string;
+    avisoPrivacidad?: string;
+}
+
+// ──────────────────────────────────────────────────────────────
+// NOM-024: Bitácora de auditoría (tabla audit_logs)
+// ──────────────────────────────────────────────────────────────
+export type AuditAction =
+    | 'VIEW_RECORD'
+    | 'SAVE_RECORD'
+    | 'FINALIZE_NOTE'
+    | 'DELETE_PATIENT'
+    | 'LOGIN'
+    | 'LOGOUT';
+
+export interface AuditLog {
+    id?: string;
+    appId: string;
+    userId?: string;
+    patientId?: string;
+    action: AuditAction;
+    details?: Record<string, any>;
+    createdAt?: string;
 }
 
 export interface Appointment {
@@ -95,20 +147,19 @@ export interface Appointment {
     patientId: string;
     patient?: Patient;
     hospitalId: string;
-    serviceName?: string; // Denormalized for easier display
+    serviceName?: string;
     reason: AppointmentReason;
-    date: string; // ISO String
-    time: string; // "10:30"
+    date: string;
+    time: string;
     specificService?: string;
     appId?: string;
 }
 
 export const APPOINTMENT_CONFIG = {
-    START_HOUR: 9, // 9:00 AM
-    END_HOUR: 15,  // 3:00 PM
+    START_HOUR: 9,
+    END_HOUR: 15,
     INTERVAL_MINUTES: 30
 };
-
 
 export const SERVICES: Service[] = [
     {
