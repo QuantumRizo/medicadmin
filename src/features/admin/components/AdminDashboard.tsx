@@ -13,6 +13,7 @@ import { AdminAppointmentDialog } from './AdminAppointmentDialog';
 import { BookingTypeDialog } from './BookingTypeDialog';
 import { AdminLayout } from './AdminLayout';
 import { ClinicSettingsPage } from './ClinicSettingsPage';
+import { RecetarioPage } from './RecetarioPage';
 import { useSearchParams } from 'react-router-dom';
 
 export const AdminDashboard = () => {
@@ -63,6 +64,7 @@ export const AdminDashboard = () => {
         { id: 'overview', label: 'Tablero', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
+        { id: 'prescriptions', label: 'Recetario', icon: LayoutDashboard },
         { id: 'settings', label: 'Configuración', icon: LayoutDashboard },
     ];
 
@@ -191,6 +193,10 @@ export const AdminDashboard = () => {
 
                 <TabsContent value="settings" className="mt-0 focus-visible:outline-none outline-none border-none p-6">
                     <ClinicSettingsPage />
+                </TabsContent>
+
+                <TabsContent value="prescriptions" className="mt-0 focus-visible:outline-none outline-none border-none p-6">
+                    <RecetarioPage />
                 </TabsContent>
             </Tabs>
 

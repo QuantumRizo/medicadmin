@@ -1,4 +1,4 @@
-import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X, Settings } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X, Settings, ClipboardList } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from './GlobalSearch';
 
@@ -23,10 +23,11 @@ export const AdminSidebar = ({
         { id: 'overview', label: 'Tablero', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
+        { id: 'prescriptions', label: 'Recetario', icon: ClipboardList },
     ];
 
     return (
-        <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0f172a] text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <aside className={`print:hidden fixed inset-y-0 left-0 z-50 w-64 bg-[#0f172a] text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
             <div className="flex flex-col h-full p-6">
                 {/* Logo */}
                 <div className="flex items-center gap-3 mb-10 px-2">

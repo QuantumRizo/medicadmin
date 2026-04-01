@@ -25,16 +25,16 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs(create
 -- RLS: Solo usuarios autenticados de la misma app pueden leer sus propios logs
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "audit_logs: read own app logs" ON public.audit_logs;
 CREATE POLICY "audit_logs: read own app logs" ON public.audit_logs
     FOR SELECT USING (app_id = (
-        SELECT raw_user_meta_data->>'app_id'
-        FROM auth.users WHERE id = auth.uid()
+        SELECT app_id FROM public.profiles WHERE id = auth.uid()
     ));
 
+DROP POLICY IF EXISTS "audit_logs: insert own app logs" ON public.audit_logs;
 CREATE POLICY "audit_logs: insert own app logs" ON public.audit_logs
     FOR INSERT WITH CHECK (app_id = (
-        SELECT raw_user_meta_data->>'app_id'
-        FROM auth.users WHERE id = auth.uid()
+        SELECT app_id FROM public.profiles WHERE id = auth.uid()
     ));
 
 -- Los logs NUNCA se pueden actualizar ni borrar (integridad NOM-024)
@@ -63,16 +63,16 @@ CREATE TABLE IF NOT EXISTS public.clinic_settings (
 -- RLS: Solo el usuario de esa app puede leer/escribir su propia configuración
 ALTER TABLE public.clinic_settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "clinic_settings: read own" ON public.clinic_settings;
 CREATE POLICY "clinic_settings: read own" ON public.clinic_settings
     FOR SELECT USING (app_id = (
-        SELECT raw_user_meta_data->>'app_id'
-        FROM auth.users WHERE id = auth.uid()
+        SELECT app_id FROM public.profiles WHERE id = auth.uid()
     ));
 
+DROP POLICY IF EXISTS "clinic_settings: upsert own" ON public.clinic_settings;
 CREATE POLICY "clinic_settings: upsert own" ON public.clinic_settings
     FOR ALL USING (app_id = (
-        SELECT raw_user_meta_data->>'app_id'
-        FROM auth.users WHERE id = auth.uid()
+        SELECT app_id FROM public.profiles WHERE id = auth.uid()
     ));
 
 
@@ -89,10 +89,10 @@ BEGIN
         SELECT 1 FROM pg_policies
         WHERE tablename = 'patients' AND policyname = 'patients: own app only'
     ) THEN
+        DROP POLICY IF EXISTS "patients: own app only" ON public.patients;
         CREATE POLICY "patients: own app only" ON public.patients
             FOR ALL USING (app_id = (
-                SELECT raw_user_meta_data->>'app_id'
-                FROM auth.users WHERE id = auth.uid()
+                SELECT app_id FROM public.profiles WHERE id = auth.uid()
             ));
     END IF;
 END $$;

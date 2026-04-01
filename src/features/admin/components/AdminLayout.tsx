@@ -40,7 +40,7 @@ export const AdminLayout = ({
     };
 
     return (
-        <div className="flex min-h-screen bg-slate-50/50 font-sans overflow-hidden">
+        <div className="flex min-h-screen bg-slate-50/50 font-sans overflow-hidden print:overflow-visible print:bg-white print:min-h-0">
             <AdminSidebar 
                 currentTab={currentTab}
                 onTabChange={handleTabChange}
@@ -51,9 +51,9 @@ export const AdminLayout = ({
             />
 
             {/* Main Content */}
-            <main className="flex-1 lg:ml-64 p-4 lg:p-10 transition-all duration-300 max-h-screen overflow-y-auto w-full">
+            <main className="flex-1 lg:ml-64 p-4 lg:p-10 transition-all duration-300 max-h-screen overflow-y-auto w-full print:ml-0 print:p-0 print:overflow-visible print:max-h-none print:h-auto">
                 {/* Mobile Header Toolbar */}
-                <div className="lg:hidden flex justify-between items-center mb-8">
+                <div className="lg:hidden flex justify-between items-center mb-8 print:hidden">
                     <button
                         onClick={() => setIsMobileMenuOpen(true)}
                         className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm active:scale-95 transition-all"
@@ -69,7 +69,7 @@ export const AdminLayout = ({
                 </div>
 
                 {/* Content Header (Actions) */}
-                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-10">
+                <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6 mb-10 print:hidden">
                     <div className="animate-fade-in lg:animate-slide-up">
                         <h2 className="text-4xl lg:text-5xl font-extrabold text-[#0f172a] tracking-tight capitalize">
                             {title}

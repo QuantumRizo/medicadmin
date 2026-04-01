@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Save, Building2, User, Award, MapPin, FileText, Loader2 } from 'lucide-react';
+import { Save, User, Award, FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -116,51 +116,8 @@ export const ClinicSettingsPage = () => {
                 </Button>
             </div>
 
-            {/* Datos de la Clínica */}
-            <Card className="shadow-sm border-t-4 border-t-[#1c334a]">
-                <CardHeader className="pb-4 border-b bg-gray-50/50">
-                    <CardTitle className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
-                        <Building2 className="w-4 h-4 text-[#1c334a]" />
-                        Datos de la Clínica
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-5 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre de la Clínica</label>
-                            <Input
-                                value={profile.clinicName}
-                                onChange={e => set('clinicName', e.target.value)}
-                                placeholder="Ej. Clínica Dental García"
-                                className="rounded-lg"
-                            />
-                        </div>
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Teléfono</label>
-                            <Input
-                                value={profile.telefonoClinica}
-                                onChange={e => set('telefonoClinica', e.target.value)}
-                                placeholder="55 1234 5678"
-                                className="rounded-lg"
-                            />
-                        </div>
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-1">
-                            <MapPin className="w-3 h-3" /> Dirección
-                        </label>
-                        <Input
-                            value={profile.direccionClinica}
-                            onChange={e => set('direccionClinica', e.target.value)}
-                            placeholder="Calle, Número, Colonia, Ciudad, Estado, C.P."
-                            className="rounded-lg"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
             {/* Datos del Médico */}
-            <Card className="shadow-sm">
+            <Card className="shadow-sm border-t-4 border-t-[#1c334a]">
                 <CardHeader className="pb-4 border-b bg-gray-50/50">
                     <CardTitle className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
                         <User className="w-4 h-4 text-[#1c334a]" />
@@ -241,7 +198,7 @@ export const ClinicSettingsPage = () => {
                     <p className="font-semibold">Cumplimiento NOM-024-SSA3-2012</p>
                     <p className="text-xs mt-1 text-blue-600">
                         La cédula profesional y nombre del médico se usarán automáticamente para identificar quién realizó cada registro clínico.
-                        Los datos de la clínica aparecerán en documentos y recetas futuras.
+                        La cédula profesional y nombre del médico se usarán automáticamente para identificar quién realizó cada registro clínico y generar recetas.
                     </p>
                 </div>
             </div>
