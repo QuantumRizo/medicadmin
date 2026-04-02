@@ -151,6 +151,7 @@ export interface Appointment {
     reason: AppointmentReason;
     date: string;
     time: string;
+    status: 'pending' | 'confirmed' | 'cancelled' | 'attended' | 'no-show';
     specificService?: string;
     appId?: string;
 }

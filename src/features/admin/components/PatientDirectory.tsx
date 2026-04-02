@@ -13,8 +13,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-
 import { Skeleton } from "@/components/ui/skeleton";
+import { logActivity } from '@/lib/audit';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PatientDirectoryProps {
     onBookAppointment?: (patientData: any) => void;
@@ -22,6 +23,7 @@ interface PatientDirectoryProps {
 
 export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) => {
     const { appointments, patients, hospitals, deletePatient, addPatient, loading } = useAppointments();
+    const { appId } = useAuth();
     const navigate = useNavigate();
 
     const formatTime = (timeStr: string) => {
@@ -180,9 +182,23 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
     const confirmDeletePatient = async () => {
         if (!patientToDelete) return;
 
+        const patientObj = patients.find(p => p.id === patientToDelete);
+        const patientName = patientObj?.name || 'Desconocido';
+
         setIsDeleting(true);
         try {
             await deletePatient(patientToDelete);
+            
+            // Audit: Log delete patient (NOM-024)
+            if (appId) {
+                logActivity({
+                    appId,
+                    patientId: patientToDelete,
+                    action: 'DELETE_PATIENT',
+                    details: { patientName }
+                });
+            }
+
             toast.success("Paciente eliminado correctamente");
             setPatientToDelete(null);
         } catch (error: any) {

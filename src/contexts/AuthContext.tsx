@@ -10,6 +10,10 @@ interface AuthContextType {
     subscriptionStatus: string;
     planName: string;
     trialEndsAt: string | null;
+    whatsappLimit: number;
+    whatsappExtraCredits: number;
+    whatsappRemindersEnabled: boolean;
+    setWhatsappRemindersEnabled: (enabled: boolean) => void;
     loading: boolean;
     signOut: () => Promise<void>;
 }
@@ -23,6 +27,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [subscriptionStatus, setSubscriptionStatus] = useState<string>('trial');
     const [planName, setPlanName] = useState<string>('Free');
     const [trialEndsAt, setTrialEndsAt] = useState<string | null>(null);
+    const [whatsappLimit, setWhatsappLimit] = useState<number>(300);
+    const [whatsappExtraCredits, setWhatsappExtraCredits] = useState<number>(0);
+    const [whatsappRemindersEnabled, setWhatsappRemindersEnabled] = useState<boolean>(true);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -47,6 +54,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setSubscriptionStatus('trial');
                 setPlanName('Free');
                 setTrialEndsAt(null);
+                setWhatsappLimit(300);
+                setWhatsappExtraCredits(0);
+                setWhatsappRemindersEnabled(true);
                 setLoading(false);
             }
         });
@@ -59,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         try {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('app_id, full_name, subscription_status, plan_name, trial_ends_at')
+                .select('app_id, full_name, subscription_status, plan_name, trial_ends_at, whatsapp_limit, whatsapp_extra_credits, whatsapp_reminders_enabled')
                 .eq('id', userId)
                 .single();
 
@@ -71,6 +81,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setSubscriptionStatus(data.subscription_status || 'trial');
                 setPlanName(data.plan_name || 'Free');
                 setTrialEndsAt(data.trial_ends_at || null);
+                setWhatsappLimit(data.whatsapp_limit ?? 300);
+                setWhatsappExtraCredits(data.whatsapp_extra_credits ?? 0);
+                setWhatsappRemindersEnabled(data.whatsapp_reminders_enabled ?? true);
             }
         } catch (error) {
             console.error('Error fetching profile:', error);
@@ -92,6 +105,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             subscriptionStatus, 
             planName, 
             trialEndsAt, 
+            whatsappLimit,
+            whatsappExtraCredits,
+            whatsappRemindersEnabled,
+            setWhatsappRemindersEnabled,
             loading, 
             signOut 
         }}>

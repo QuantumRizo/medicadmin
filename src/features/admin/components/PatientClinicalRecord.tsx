@@ -290,6 +290,18 @@ export const PatientClinicalRecord = ({
         }
     }, [initialPatient.id]); // Only run when ID changes
 
+    // Audit: Log view record on mount (NOM-024)
+    useEffect(() => {
+        if (appId && patient.id) {
+            logActivity({
+                appId,
+                patientId: patient.id,
+                action: 'VIEW_RECORD',
+                details: { patientName: patient.name }
+            });
+        }
+    }, [appId, patient.id, patient.name]);
+
     // NOM-024 Migration: Si el paciente tiene notas viejas (patient.notes) y no tiene
     // sesiones aún, migrar automáticamente y guardar en Supabase — corre una sola vez al montar.
     useEffect(() => {
@@ -458,6 +470,16 @@ export const PatientClinicalRecord = ({
                 notes: generalNotes,
                 medicalHistory: history 
             };
+
+            // Audit: Log save record (NOM-024)
+            if (appId) {
+                logActivity({
+                    appId,
+                    patientId: patient.id,
+                    action: 'SAVE_RECORD',
+                    details: { isSilent }
+                });
+            }
 
             // Clear backup BEFORE saving to DB to prevent stale backup from being restored on next mount
             localStorage.removeItem(`backup_patient_${patient.id}`);

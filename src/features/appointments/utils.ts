@@ -20,7 +20,23 @@ export const getStatusLabel = (reason: AppointmentReason | string) => {
     }
 };
 
-export const getApptColor = (reason: AppointmentReason | string) => {
+export const getApptColor = (reason: AppointmentReason | string, status?: string) => {
+    if (status === 'confirmed') {
+        return {
+            bg: 'bg-emerald-50',
+            border: 'border-emerald-200',
+            text: 'text-emerald-700',
+            name: 'emerald'
+        };
+    }
+    if (status === 'cancelled') {
+        return {
+            bg: 'bg-rose-50',
+            border: 'border-rose-200',
+            text: 'text-rose-700',
+            name: 'rose'
+        };
+    }
     if (reason === 'blocked') {
         return {
             bg: 'bg-slate-100',

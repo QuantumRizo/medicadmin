@@ -3,11 +3,41 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Check, CreditCard, Sparkles, AlertTriangle, Calendar, ExternalLink, ShieldCheck } from 'lucide-react';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import { format, differenceInDays, parseISO, startOfMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Progress } from "@/components/ui/progress";
+import { toast } from 'sonner';
 
 export const SubscriptionPage = () => {
-    const { subscriptionStatus, planName, trialEndsAt } = useAuth();
+    const { subscriptionStatus, planName, trialEndsAt, appId, whatsappLimit, whatsappExtraCredits } = useAuth();
+    const [sentCount, setSentCount] = useState(0);
+    const [fetchingUsage, setFetchingUsage] = useState(true);
+
+    useEffect(() => {
+        if (!appId) return;
+        
+        const fetchUsage = async () => {
+            const start = startOfMonth(new Date());
+
+            const { count, error } = await supabase
+                .from('appointments')
+                .select('*', { count: 'exact', head: true })
+                .eq('app_id', appId)
+                .eq('whatsapp_reminder_sent', true)
+                .gte('created_at', start.toISOString());
+
+            if (!error) setSentCount(count || 0);
+            setFetchingUsage(false);
+        };
+
+        fetchUsage();
+    }, [appId]);
+
+    const totalLimit = whatsappLimit + whatsappExtraCredits;
+    const usagePercentage = Math.min((sentCount / totalLimit) * 100, 100);
+    const isOverLimit = sentCount >= totalLimit;
 
     // Calculate days remaining if trial
     const daysRemaining = trialEndsAt 
@@ -24,6 +54,7 @@ export const SubscriptionPage = () => {
         "Subida de Archivos y Estudios (Premium)",
         "Odontograma Interactivo (Modo Dental)",
         "Soporte Técnico Prioritario",
+        "Recordatorios de Citas vía WhatsApp (Ilimitados)",
         "Cumplimiento NOM-024-SSA3-2012"
     ];
 
@@ -50,10 +81,42 @@ export const SubscriptionPage = () => {
                         </p>
                     </div>
 
-                    <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 space-y-4">
+                    <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 space-y-6">
                         <div className="flex items-center justify-between">
                             <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Plan Actual</span>
                             <span className="text-sky-400 font-black">{planName}</span>
+                        </div>
+
+                        {/* WhatsApp Usage Bar */}
+                        <div className="space-y-3 pt-2 border-t border-white/5">
+                            <div className="flex justify-between items-end">
+                                <div className="space-y-1">
+                                    <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] block">Uso de WhatsApp</span>
+                                    <span className="text-sm font-black text-white">
+                                        {fetchingUsage ? '...' : sentCount} / {totalLimit}
+                                    </span>
+                                </div>
+                                <Badge className={`${
+                                    isOverLimit ? 'bg-red-500' : usagePercentage > 80 ? 'bg-amber-500' : 'bg-green-500'
+                                } text-[9px] h-5`}>
+                                    {isOverLimit ? 'Límite alcanzado' : `${Math.round(usagePercentage)}%`}
+                                </Badge>
+                            </div>
+                            <Progress value={usagePercentage} className={`h-1.5 bg-white/10 ${
+                                isOverLimit ? '[&>div]:bg-red-500' : usagePercentage > 80 ? '[&>div]:bg-amber-500' : '[&>div]:bg-sky-500'
+                            }`} />
+                            
+                            <div className="flex justify-between items-center bg-white/5 p-2 rounded-xl border border-white/5">
+                                <span className="text-[10px] text-slate-400 font-medium italic">
+                                    {whatsappExtraCredits > 0 ? `+${whatsappExtraCredits} créditos extra incluidos` : 'Solo mensajes base'}
+                                </span>
+                                <button 
+                                    onClick={() => toast.info("Funcionalidad de recarga automática en desarrollo. Contacta a soporte para comprar créditos extra.")}
+                                    className="text-[10px] text-sky-400 font-bold hover:underline"
+                                >
+                                    Recargar
+                                </button>
+                            </div>
                         </div>
                         
                         {isTrial && (
@@ -92,10 +155,10 @@ export const SubscriptionPage = () => {
                             <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Suscripción Mensual</span>
                             <div className="flex items-center justify-center gap-1">
                                 <span className="text-2xl font-bold text-slate-400 mt-2">$</span>
-                                <span className="text-6xl font-black text-[#1c334a]">500</span>
+                                <span className="text-6xl font-black text-[#1c334a]">600</span>
                                 <span className="text-lg font-bold text-slate-400 mt-4">+ IVA</span>
                             </div>
-                            <p className="text-xs text-slate-500 font-medium">Total: $580.00 MXN al mes</p>
+                            <p className="text-xs text-slate-500 font-medium">Total: $696.00 MXN al mes</p>
                         </div>
                         
                         <CardContent className="p-8 flex-1 space-y-6">

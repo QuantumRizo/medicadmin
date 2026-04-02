@@ -12,7 +12,9 @@ import {
     Edit2, 
     Trash2, 
     X, 
-    Check
+    Check,
+    CheckCircle2,
+    XCircle
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -90,6 +92,16 @@ export const AppointmentDetailDialog = ({
                                 DETALLE DE CITA
                             </Badge>
                             <div className="flex gap-2">
+                                {appointment.status === 'confirmed' && (
+                                    <Badge className="bg-emerald-500 text-white border-none rounded-xl px-3 py-1 font-black text-[10px] flex gap-1 items-center animate-pulse">
+                                        <CheckCircle2 className="w-3 h-3" /> CONFIRMADA
+                                    </Badge>
+                                )}
+                                {appointment.status === 'cancelled' && (
+                                    <Badge className="bg-rose-500 text-white border-none rounded-xl px-3 py-1 font-black text-[10px] flex gap-1 items-center">
+                                        <XCircle className="w-3 h-3" /> CANCELADA
+                                    </Badge>
+                                )}
                                 {appointment.reason === 'blocked' && <Badge className="bg-slate-900 text-white border-none rounded-xl px-3 py-1 font-black text-[10px]">BLOQUEADO</Badge>}
                                 <Badge className={`bg-white/90 ${color.text} border-none rounded-xl px-3 py-1 font-black text-[10px]`}>{getStatusLabel(appointment.reason)}</Badge>
                             </div>
@@ -148,6 +160,31 @@ export const AppointmentDetailDialog = ({
                                         <span className="text-slate-900 font-black text-right">{patient!.phone}</span>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Gestionar Estado
+                            </label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => onUpdate(appointment.id, { status: 'attended' })}
+                                    className={`h-11 rounded-xl font-bold border-slate-200 ${appointment.status === 'attended' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'hover:bg-slate-50'}`}
+                                >
+                                    Asistió
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => onUpdate(appointment.id, { status: 'no-show' })}
+                                    className={`h-11 rounded-xl font-bold border-slate-200 ${appointment.status === 'no-show' ? 'bg-rose-50 text-rose-700 border-rose-200' : 'hover:bg-slate-50'}`}
+                                >
+                                    No llegó
+                                </Button>
                             </div>
                         </div>
 

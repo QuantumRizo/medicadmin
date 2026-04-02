@@ -7,6 +7,8 @@ import {
     ChevronRight,
     Plus,
     Clock,
+    CheckCircle2,
+    XCircle
 } from 'lucide-react';
 import {
     format,
@@ -181,15 +183,17 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             <div className="flex flex-col gap-0.5 overflow-hidden flex-1 pb-6">
                                                 {dayAppts.slice(0, 2).map(apt => {
                                                     const patient = patients.find(p => p.id === apt.patientId);
-                                                    const color = getApptColor(apt.reason);
+                                                    const color = getApptColor(apt.reason, apt.status);
                                                     return (
                                                         <div
                                                             key={apt.id}
-                                                            className={`text-[9px] px-1.5 py-0.5 rounded-md border font-normal truncate cursor-pointer transition-all hover:translate-x-0.5 ${color.bg} ${color.border} ${color.text}`}
+                                                            className={`text-[9px] px-1.5 py-0.5 rounded-md border font-normal truncate cursor-pointer transition-all hover:translate-x-0.5 flex items-center gap-1 ${color.bg} ${color.border} ${color.text}`}
                                                             onClick={() => setSelectedDetailApt(apt)}
                                                         >
+                                                            {apt.status === 'confirmed' && <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />}
+                                                            {apt.status === 'cancelled' && <XCircle className="w-2.5 h-2.5 shrink-0" />}
                                                             <span className="font-extrabold mr-1">{formatTime(apt.time).split(' ')[0]}</span>
-                                                            {patient?.name.split(' ')[0]}
+                                                            <span className="truncate">{patient?.name.split(' ')[0]}</span>
                                                         </div>
                                                     );
                                                 })}
@@ -258,7 +262,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                     const top = (h - startHour) * hourHeight + (m / 60) * hourHeight;
                                                     const height = hourHeight - 6;
                                                     const patient = patients.find(p => p.id === apt.patientId);
-                                                    const color = getApptColor(apt.reason);
+                                                    const color = getApptColor(apt.reason, apt.status);
 
                                                     return (
                                                         <div
@@ -280,7 +284,11 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                                         <Clock className="w-2.5 h-2.5" />
                                                                         {formatTime(apt.time)}
                                                                     </div>
-                                                                    {apt.reason === 'blocked' && <Badge className="text-[8px] h-4 px-1 bg-slate-900/10 text-slate-900 border-none uppercase font-black">Bloq</Badge>}
+                                                                    <div className="flex gap-1">
+                                                                        {apt.status === 'confirmed' && <Badge className="text-[8px] h-4 px-1 bg-emerald-500 text-white border-none uppercase font-black gap-0.5"><CheckCircle2 className="w-2 h-2" /> Confirmada</Badge>}
+                                                                        {apt.status === 'cancelled' && <Badge className="text-[8px] h-4 px-1 bg-rose-500 text-white border-none uppercase font-black gap-0.5"><XCircle className="w-2 h-2" /> Cancelada</Badge>}
+                                                                        {apt.reason === 'blocked' && <Badge className="text-[8px] h-4 px-1 bg-slate-900/10 text-slate-900 border-none uppercase font-black">Bloq</Badge>}
+                                                                    </div>
                                                                 </div>
                                                                 <div className="font-black text-[11px] leading-[1.1] mb-0.5 truncate group-hover:whitespace-normal transition-all">
                                                                     {patient?.name || 'ESPACIO BLOQUEADO'}

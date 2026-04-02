@@ -93,6 +93,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                     reason: a.reason,
                     date: dateStr,
                     time: timeStr,
+                    status: a.status || 'pending',
                     serviceName: a.service_name,
                     specificService: a.specific_service,
                     appId: a.app_id
