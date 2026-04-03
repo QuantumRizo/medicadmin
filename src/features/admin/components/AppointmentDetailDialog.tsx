@@ -13,8 +13,6 @@ import {
     Trash2, 
     X, 
     Check,
-    CheckCircle2,
-    XCircle
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -93,13 +91,13 @@ export const AppointmentDetailDialog = ({
                             </Badge>
                             <div className="flex gap-2">
                                 {appointment.status === 'confirmed' && (
-                                    <Badge className="bg-emerald-500 text-white border-none rounded-xl px-3 py-1 font-black text-[10px] flex gap-1 items-center animate-pulse">
-                                        <CheckCircle2 className="w-3 h-3" /> CONFIRMADA
+                                    <Badge className="bg-emerald-500 text-white border-none rounded-xl px-3 py-1 font-black text-[10px] flex gap-1 items-center">
+                                        CONFIRMADA
                                     </Badge>
                                 )}
                                 {appointment.status === 'cancelled' && (
                                     <Badge className="bg-rose-500 text-white border-none rounded-xl px-3 py-1 font-black text-[10px] flex gap-1 items-center">
-                                        <XCircle className="w-3 h-3" /> CANCELADA
+                                        CANCELADA
                                     </Badge>
                                 )}
                                 {appointment.reason === 'blocked' && <Badge className="bg-slate-900 text-white border-none rounded-xl px-3 py-1 font-black text-[10px]">BLOQUEADO</Badge>}
@@ -160,12 +158,24 @@ export const AppointmentDetailDialog = ({
                                         <span className="text-slate-900 font-black text-right">{patient!.phone}</span>
                                     </div>
                                 )}
+                                {appointment.status === 'confirmed' && (
+                                    <div className="flex items-center justify-between pt-2 border-t border-emerald-100 text-sm gap-2 text-emerald-700">
+                                        <span className="font-bold shrink-0">WhatsApp:</span>
+                                        <span className="font-black text-right">Confirmó por WhatsApp</span>
+                                    </div>
+                                )}
+                                {appointment.status === 'cancelled' && (
+                                    <div className="flex items-center justify-between pt-2 border-t border-rose-100 text-sm gap-2 text-rose-700">
+                                        <span className="font-bold shrink-0">WhatsApp:</span>
+                                        <span className="font-black text-right">Canceló por WhatsApp</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
                         <div className="space-y-3">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                                <CheckCircle2 className="w-4 h-4" />
+                                <Check className="w-4 h-4" />
                                 Gestionar Estado
                             </label>
                             <div className="grid grid-cols-2 gap-2">

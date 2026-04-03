@@ -185,15 +185,18 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                     const patient = patients.find(p => p.id === apt.patientId);
                                                     const color = getApptColor(apt.reason, apt.status);
                                                     return (
-                                                        <div
-                                                            key={apt.id}
-                                                            className={`text-[9px] px-1.5 py-0.5 rounded-md border font-normal truncate cursor-pointer transition-all hover:translate-x-0.5 flex items-center gap-1 ${color.bg} ${color.border} ${color.text}`}
+                                                        <div 
+                                                            key={apt.id} 
+                                                            className={`p-1.5 rounded-lg border-l-4 shadow-sm mb-1 cursor-pointer transition-all hover:scale-[1.02] active:scale-95 ${color.bg} ${color.border} ${color.text} group`}
                                                             onClick={() => setSelectedDetailApt(apt)}
                                                         >
-                                                            {apt.status === 'confirmed' && <CheckCircle2 className="w-2.5 h-2.5 shrink-0" />}
-                                                            {apt.status === 'cancelled' && <XCircle className="w-2.5 h-2.5 shrink-0" />}
-                                                            <span className="font-extrabold mr-1">{formatTime(apt.time).split(' ')[0]}</span>
-                                                            <span className="truncate">{patient?.name.split(' ')[0]}</span>
+                                                            <div className="flex flex-col gap-0.5">
+                                                                <div className="flex items-center justify-between">
+                                                                    {apt.status === 'cancelled' && <XCircle className="w-2.5 h-2.5 shrink-0" />}
+                                                                    <span className="font-extrabold mr-1">{formatTime(apt.time).split(' ')[0]}</span>
+                                                                    <span className="truncate">{patient?.name.split(' ')[0]}</span>
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     );
                                                 })}
@@ -276,7 +279,10 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                             }}
                                                             onMouseEnter={() => setHoveredAptId(apt.id)}
                                                             onMouseLeave={() => setHoveredAptId(null)}
-                                                            onClick={() => setSelectedDetailApt(apt)}
+                                                            onClick={() => {
+                                                                setHoveredAptId(null);
+                                                                setSelectedDetailApt(apt);
+                                                            }}
                                                         >
                                                             <div className="flex flex-col h-full">
                                                                 <div className="flex items-center justify-between gap-1 mb-1.5">
@@ -328,7 +334,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                         <div className="grid gap-3">
                             {getDayAppointments(currentDate).sort((a,b) => a.time.localeCompare(b.time)).map(apt => {
                                 const patient = patients.find(p => p.id === apt.patientId);
-                                const color = getApptColor(apt.reason);
+                                const color = getApptColor(apt.reason, apt.status);
                                 return (
                                     <div 
                                         key={apt.id} 
@@ -363,7 +369,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50">
                             {selectedDay && getDayAppointments(selectedDay!).sort((a,b) => a.time.localeCompare(b.time)).map(apt => {
                                 const patient = patients.find(p => p.id === apt.patientId);
-                                const color = getApptColor(apt.reason);
+                                const color = getApptColor(apt.reason, apt.status);
                                 return (
                                     <div
                                         key={apt.id}
