@@ -48,7 +48,8 @@ export const AppointmentDetailDialog = ({
 
     if (!appointment) return null;
 
-    const color = getApptColor(appointment.reason);
+    const hospitalIndex = hospitals.findIndex(h => h.id === appointment.hospitalId);
+    const color = getApptColor(appointment.reason, appointment.status, hospitalIndex >= 0 ? hospitalIndex : 0);
 
     const handleStartEditing = () => {
         setEditDate(appointment.date);
