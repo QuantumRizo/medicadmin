@@ -7,7 +7,6 @@ import {
     ChevronRight,
     Plus,
     Clock,
-    CheckCircle2,
     XCircle
 } from 'lucide-react';
 import {
@@ -30,7 +29,7 @@ import { es } from 'date-fns/locale';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
 import type { Appointment } from '../../appointments/types';
-import { formatTime, getStatusLabel, getApptColor, getHospitalAcronym } from '../../appointments/utils';
+import { formatTime, getStatusLabel, getApptColor } from '../../appointments/utils';
 import { Badge } from "@/components/ui/badge";
 import { toast } from 'sonner';
 
@@ -181,28 +180,26 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             </div>
 
                                             <div className="flex flex-col gap-0.5 overflow-hidden flex-1 pb-6">
-                                                {dayAppts.slice(0, 2).map(apt => {
+                                                {dayAppts.slice(0, 4).map(apt => {
                                                     const patient = patients.find(p => p.id === apt.patientId);
-                                                    const color = getApptColor(apt.reason, apt.status);
+                                                    const hospitalIndex = hospitals.findIndex(h => h.id === apt.hospitalId);
+                                                    const color = getApptColor(apt.reason, apt.status, hospitalIndex);
+                                                    const isSinCita = apt.reason === 'blocked';
                                                     return (
                                                         <div 
                                                             key={apt.id} 
-                                                            className={`p-1.5 rounded-lg border-l-4 shadow-sm mb-1 cursor-pointer transition-all hover:scale-[1.02] active:scale-95 ${color.bg} ${color.border} ${color.text} group`}
-                                                            onClick={() => setSelectedDetailApt(apt)}
+                                                            className={`px-1.5 py-0.5 rounded text-[10px] font-bold shadow-sm mb-[2px] cursor-pointer transition-all hover:brightness-95 active:scale-95 ${color.bg} ${color.text} flex items-center gap-1 group`}
+                                                            onClick={(e) => { e.stopPropagation(); setSelectedDetailApt(apt); }}
                                                         >
-                                                            <div className="flex flex-col gap-0.5">
-                                                                <div className="flex items-center justify-between">
-                                                                    {apt.status === 'cancelled' && <XCircle className="w-2.5 h-2.5 shrink-0" />}
-                                                                    <span className="font-extrabold mr-1">{formatTime(apt.time).split(' ')[0]}</span>
-                                                                    <span className="truncate">{patient?.name.split(' ')[0]}</span>
-                                                                </div>
-                                                            </div>
+                                                            {apt.status === 'cancelled' && <XCircle className="w-3 h-3 shrink-0 opacity-70" />}
+                                                            <span className="shrink-0">{formatTime(apt.time).split(' ')[0]}</span>
+                                                            <span className="truncate">{isSinCita ? 'SIN CITA' : patient?.name.split(' ')[0]}</span>
                                                         </div>
                                                     );
                                                 })}
-                                                {dayAppts.length > 2 && (
-                                                    <div className="text-[9px] text-slate-400 font-bold pl-1 pt-0.5">
-                                                        +{dayAppts.length - 2} más
+                                                {dayAppts.length > 4 && (
+                                                    <div className="text-[10px] text-slate-500 font-bold pl-1 pt-0.5 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}>
+                                                        +{dayAppts.length - 4} más
                                                     </div>
                                                 )}
                                             </div>
@@ -263,19 +260,21 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                     const startHour = 8;
                                                     const hourHeight = 100;
                                                     const top = (h - startHour) * hourHeight + (m / 60) * hourHeight;
-                                                    const height = hourHeight - 6;
                                                     const patient = patients.find(p => p.id === apt.patientId);
-                                                    const color = getApptColor(apt.reason, apt.status);
+                                                    const hospitalIndex = hospitals.findIndex(h => h.id === apt.hospitalId);
+                                                    const color = getApptColor(apt.reason, apt.status, hospitalIndex);
+                                                    const isSinCita = apt.reason === 'blocked';
 
                                                     return (
                                                         <div
                                                             key={apt.id}
-                                                            className={`absolute right-1 rounded-xl border-l-4 p-3 shadow-md shadow-slate-200/50 text-xs cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl group ${color.bg} ${color.border} ${color.text}`}
+                                                            className={`absolute rounded shadow-sm text-[10px] font-bold cursor-pointer transition-all hover:brightness-95 active:scale-95 group flex items-center gap-1.5 px-2 py-1 ${color.bg} ${color.text} ${color.border} border`}
                                                             style={{ 
-                                                                top: `${top + 3}px`, 
-                                                                height: `${height}px`, 
+                                                                top: `${top + (aptIdx * 24) + 2}px`, 
+                                                                height: 'auto', 
                                                                 zIndex: hoveredAptId === apt.id ? 100 : 10 + aptIdx,
-                                                                left: `${4 + (aptIdx * 8)}px`
+                                                                left: '4px',
+                                                                right: '4px'
                                                             }}
                                                             onMouseEnter={() => setHoveredAptId(apt.id)}
                                                             onMouseLeave={() => setHoveredAptId(null)}
@@ -284,30 +283,9 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                                 setSelectedDetailApt(apt);
                                                             }}
                                                         >
-                                                            <div className="flex flex-col h-full">
-                                                                <div className="flex items-center justify-between gap-1 mb-1.5">
-                                                                    <div className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider opacity-80 bg-white/40 px-1.5 py-0.5 rounded-lg">
-                                                                        <Clock className="w-2.5 h-2.5" />
-                                                                        {formatTime(apt.time)}
-                                                                    </div>
-                                                                    <div className="flex gap-1">
-                                                                        {apt.status === 'confirmed' && <Badge className="text-[8px] h-4 px-1 bg-emerald-500 text-white border-none uppercase font-black gap-0.5"><CheckCircle2 className="w-2 h-2" /> Confirmada</Badge>}
-                                                                        {apt.status === 'cancelled' && <Badge className="text-[8px] h-4 px-1 bg-rose-500 text-white border-none uppercase font-black gap-0.5"><XCircle className="w-2 h-2" /> Cancelada</Badge>}
-                                                                        {apt.reason === 'blocked' && <Badge className="text-[8px] h-4 px-1 bg-slate-900/10 text-slate-900 border-none uppercase font-black">Bloq</Badge>}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="font-black text-[11px] leading-[1.1] mb-0.5 truncate group-hover:whitespace-normal transition-all">
-                                                                    {patient?.name || 'ESPACIO BLOQUEADO'}
-                                                                </div>
-                                                                <div className="mt-auto flex items-center justify-between">
-                                                                    <span className="text-[9px] font-bold opacity-60 italic truncate">
-                                                                        {apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? 'Primera vez' : 'Seguimiento')}
-                                                                    </span>
-                                                                    <span className="text-[9px] font-black uppercase tracking-widest bg-white/30 px-1.5 rounded-md">
-                                                                        {getHospitalAcronym(hospitals.find(h => h.id === apt.hospitalId)?.name)}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
+                                                            {apt.status === 'cancelled' && <XCircle className="w-3 h-3 shrink-0 opacity-70" />}
+                                                            <span className="shrink-0">{formatTime(apt.time).split(' ')[0]}</span>
+                                                            <span className="truncate">{isSinCita ? 'SIN CITA' : patient?.name.split(' ')[0]}</span>
                                                         </div>
                                                     );
                                                 })}
@@ -334,7 +312,9 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                         <div className="grid gap-3">
                             {getDayAppointments(currentDate).sort((a,b) => a.time.localeCompare(b.time)).map(apt => {
                                 const patient = patients.find(p => p.id === apt.patientId);
-                                const color = getApptColor(apt.reason, apt.status);
+                                const hospitalIndex = hospitals.findIndex(h => h.id === apt.hospitalId);
+                                const color = getApptColor(apt.reason, apt.status, hospitalIndex);
+                                const isSinCita = apt.reason === 'blocked';
                                 return (
                                     <div 
                                         key={apt.id} 
@@ -346,7 +326,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             <span className="text-[9px] font-bold uppercase opacity-70">{formatTime(apt.time).split(' ')[1]}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-extrabold text-slate-900 truncate">{patient?.name || 'Bloqueo'}</h4>
+                                            <h4 className="font-extrabold text-slate-900 truncate">{isSinCita ? 'Sin Cita' : patient?.name}</h4>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Badge variant="secondary" className="text-[9px] h-4 rounded-md bg-slate-100 text-slate-600 border-none">{hospitals.find(h => h.id === apt.hospitalId)?.name}</Badge>
                                                 <span className="text-[10px] text-slate-400 font-medium truncate italic">{apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? '1ra vez' : 'Seg.')}</span>
@@ -369,7 +349,9 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                         <div className="p-4 space-y-3 max-h-[60vh] overflow-y-auto custom-scrollbar bg-slate-50">
                             {selectedDay && getDayAppointments(selectedDay!).sort((a,b) => a.time.localeCompare(b.time)).map(apt => {
                                 const patient = patients.find(p => p.id === apt.patientId);
-                                const color = getApptColor(apt.reason, apt.status);
+                                const hospitalIndex = hospitals.findIndex(h => h.id === apt.hospitalId);
+                                const color = getApptColor(apt.reason, apt.status, hospitalIndex);
+                                const isSinCita = apt.reason === 'blocked';
                                 return (
                                     <div
                                         key={apt.id}
@@ -384,7 +366,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             <span className="text-[8px] font-bold uppercase">{formatTime(apt.time).split(' ')[1]}</span>
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-black text-slate-900 leading-tight">{patient?.name || 'Bloqueo'}</p>
+                                            <p className="font-black text-slate-900 leading-tight">{isSinCita ? 'Sin Cita' : patient?.name}</p>
                                             <p className="text-[10px] font-bold text-slate-400 mt-0.5 italic">
                                                 {getStatusLabel(apt.reason)}
                                             </p>

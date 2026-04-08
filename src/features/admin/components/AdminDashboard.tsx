@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { LayoutDashboard, Calendar as CalendarIcon, Users, Lock, CalendarPlus, UserPlus, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Users, CalendarPlus, UserPlus, CreditCard, Ban } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { AdminOverview } from './AdminOverview';
@@ -88,20 +88,20 @@ export const AdminDashboard = () => {
                 <>
                     <Dialog open={isBlockDialogOpen} onOpenChange={setIsBlockDialogOpen}>
                         <DialogTrigger asChild>
-                            <Button variant="outline" className="flex-1 md:flex-none border-red-200 text-red-600 hover:bg-red-50 rounded-2xl h-12 px-6 shadow-sm font-semibold transition-all active:scale-95">
-                                <Lock className="w-4 h-4 mr-2" />
-                                <span>Reservar</span>
+                            <Button variant="outline" className="flex-1 md:flex-none border-slate-200 text-slate-700 hover:bg-slate-50 rounded-2xl h-12 px-6 shadow-sm font-semibold transition-all active:scale-95">
+                                <Ban className="w-4 h-4 mr-2 text-slate-500" />
+                                <span>Sin Cita</span>
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[425px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
                             <div className="bg-[#0f172a] p-6 text-white text-center">
                                 <DialogHeader>
-                                    <div className="mx-auto w-12 h-12 rounded-2xl bg-red-500/20 flex items-center justify-center text-red-400 mb-4">
-                                        <Lock className="w-7 h-7" />
+                                    <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-500/20 flex items-center justify-center text-slate-300 mb-4">
+                                        <Ban className="w-7 h-7" />
                                     </div>
-                                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Bloquear Horario</DialogTitle>
+                                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Sin Cita</DialogTitle>
                                     <DialogDescription className="text-slate-400 font-medium mt-2">
-                                        El horario seleccionado no estará disponible para citas.
+                                        Agendar un espacio de tiempo como sin cita.
                                     </DialogDescription>
                                 </DialogHeader>
                             </div>
@@ -147,8 +147,8 @@ export const AdminDashboard = () => {
                                     </div>
                                 </div>
                                 <div className="pt-2">
-                                    <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId} className="w-full h-14 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold shadow-xl shadow-red-100 transition-all active:scale-95">
-                                        {isBlocking ? "Bloqueando..." : "Confirmar Bloqueo"}
+                                    <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId} className="w-full h-14 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-xl shadow-slate-200 transition-all active:scale-95">
+                                        {isBlocking ? "Guardando..." : "Confirmar Sin Cita"}
                                     </Button>
                                     <Button variant="ghost" onClick={() => setIsBlockDialogOpen(false)} className="w-full mt-2 rounded-xl h-10 font-bold text-slate-400">Cancelar</Button>
                                 </div>
