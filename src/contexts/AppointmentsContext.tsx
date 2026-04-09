@@ -201,8 +201,8 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             }]);
             if (appointmentError) throw appointmentError;
 
-            // Optional: Optimistic update or just let real-time handle it
-            // fetchData() is already called by real-time subscription
+            // Fetch data explicitly to avoid waiting for realtime event
+            await fetchData();
             return true;
         } catch (error) {
             console.error('Error saving appointment:', error);
@@ -275,6 +275,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             }
             const { error } = await supabase.from('appointments').delete().eq('id', appointmentId);
             if (error) throw error;
+            await fetchData();
         } catch (error) {
             console.error('Error deleting appointment:', error);
             throw error;
@@ -322,6 +323,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 app_id: APP_ID
             }]);
             if (error) throw error;
+            await fetchData();
         } catch (error) {
             console.error('Error blocking slot:', error);
             throw error;
@@ -345,6 +347,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             }
             const { error } = await supabase.from('appointments').update(dbUpdates).eq('id', appointmentId);
             if (error) throw error;
+            await fetchData();
         } catch (error) {
             console.error('Error updating appointment:', error);
             throw error;
