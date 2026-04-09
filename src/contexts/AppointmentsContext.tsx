@@ -297,13 +297,14 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
     const blockSlot = async (hospitalId: string, date: string, time: string) => {
         try {
             let blockPatientId;
-            const { data: existingBlockPatient } = await supabase.from('patients').select('id').eq('email', 'system@block.com').eq('app_id', APP_ID).maybeSingle();
+            const systemEmail = `block_${APP_ID}@system.local`;
+            const { data: existingBlockPatient } = await supabase.from('patients').select('id').eq('email', systemEmail).eq('app_id', APP_ID).maybeSingle();
             if (existingBlockPatient) {
                 blockPatientId = existingBlockPatient.id;
             } else {
                 const { data: newBlockPatient, error: createError } = await supabase.from('patients').insert([{
                     name: 'BLOQUEO DE HORARIO',
-                    email: 'system@block.com',
+                    email: systemEmail,
                     phone: '0000000000',
                     notes: 'Usuario sistema para bloqueos',
                     app_id: APP_ID

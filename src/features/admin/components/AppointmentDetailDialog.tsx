@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +83,7 @@ export const AppointmentDetailDialog = ({
             else onOpenChange(true);
         }}>
             <DialogContent className="sm:max-w-[480px] p-0 overflow-hidden border-none rounded-3xl shadow-2xl max-h-[95vh] flex flex-col">
+                <DialogTitle className="sr-only">Detalle de Cita</DialogTitle>
                 <div className="flex flex-col overflow-y-auto custom-scrollbar">
 
                     <div className={`p-8 ${color.bg} border-b ${color.border} relative`}>

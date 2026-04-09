@@ -26,7 +26,7 @@ import {
     subWeeks
 } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
 import type { Appointment } from '../../appointments/types';
 import { formatTime, getStatusLabel, getApptColor } from '../../appointments/utils';
@@ -193,7 +193,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                         >
                                                             {apt.status === 'cancelled' && <XCircle className="w-3 h-3 shrink-0 opacity-70" />}
                                                             <span className="shrink-0">{formatTime(apt.time).split(' ')[0]}</span>
-                                                            <span className="truncate">{isSinCita ? 'SIN CITA' : patient?.name.split(' ')[0]}</span>
+                                                            <span className="truncate">{isSinCita ? 'NO CITAR' : patient?.name.split(' ')[0]}</span>
                                                         </div>
                                                     );
                                                 })}
@@ -285,7 +285,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                         >
                                                             {apt.status === 'cancelled' && <XCircle className="w-3 h-3 shrink-0 opacity-70" />}
                                                             <span className="shrink-0">{formatTime(apt.time).split(' ')[0]}</span>
-                                                            <span className="truncate">{isSinCita ? 'SIN CITA' : patient?.name.split(' ')[0]}</span>
+                                                            <span className="truncate">{isSinCita ? 'NO CITAR' : patient?.name.split(' ')[0]}</span>
                                                         </div>
                                                     );
                                                 })}
@@ -326,7 +326,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             <span className="text-[9px] font-bold uppercase opacity-70">{formatTime(apt.time).split(' ')[1]}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-extrabold text-slate-900 truncate">{isSinCita ? 'Sin Cita' : patient?.name}</h4>
+                                            <h4 className="font-extrabold text-slate-900 truncate">{isSinCita ? 'NO CITAR' : patient?.name}</h4>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Badge variant="secondary" className="text-[9px] h-4 rounded-md bg-slate-100 text-slate-600 border-none">{hospitals.find(h => h.id === apt.hospitalId)?.name}</Badge>
                                                 <span className="text-[10px] text-slate-400 font-medium truncate italic">{apt.reason === 'specific-service' ? apt.serviceName : (apt.reason === 'first-visit' ? '1ra vez' : 'Seg.')}</span>
@@ -342,6 +342,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
 
                 <Dialog open={!!selectedDay} onOpenChange={(open) => !open && setSelectedDay(null)}>
                     <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none rounded-3xl shadow-2xl">
+                        <DialogTitle className="sr-only">Citas del día</DialogTitle>
                         <div className="p-8 bg-[#1c334a] text-white">
                             <h2 className="text-2xl font-black uppercase tracking-tight">Citas del día</h2>
                             <p className="text-sky-300 font-bold opacity-80 mt-1">{selectedDay && format(selectedDay!, "PPPP", { locale: es })}</p>
@@ -366,7 +367,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             <span className="text-[8px] font-bold uppercase">{formatTime(apt.time).split(' ')[1]}</span>
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-black text-slate-900 leading-tight">{isSinCita ? 'Sin Cita' : patient?.name}</p>
+                                            <p className="font-black text-slate-900 leading-tight">{isSinCita ? 'NO CITAR' : patient?.name}</p>
                                             <p className="text-[10px] font-bold text-slate-400 mt-0.5 italic">
                                                 {getStatusLabel(apt.reason)}
                                             </p>

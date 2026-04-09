@@ -90,7 +90,7 @@ export const AdminDashboard = () => {
                         <DialogTrigger asChild>
                             <Button variant="outline" className="flex-1 md:flex-none border-slate-200 text-slate-700 hover:bg-slate-50 rounded-2xl h-12 px-6 shadow-sm font-semibold transition-all active:scale-95">
                                 <Ban className="w-4 h-4 mr-2 text-slate-500" />
-                                <span>Sin Cita</span>
+                                <span>NO CITAR</span>
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="sm:max-w-[425px] rounded-2xl border-none shadow-2xl p-0 overflow-hidden">
@@ -99,9 +99,9 @@ export const AdminDashboard = () => {
                                     <div className="mx-auto w-12 h-12 rounded-2xl bg-slate-500/20 flex items-center justify-center text-slate-300 mb-4">
                                         <Ban className="w-7 h-7" />
                                     </div>
-                                    <DialogTitle className="text-2xl font-extrabold tracking-tight">Sin Cita</DialogTitle>
+                                    <DialogTitle className="text-2xl font-extrabold tracking-tight">NO CITAR</DialogTitle>
                                     <DialogDescription className="text-slate-400 font-medium mt-2">
-                                        Agendar un espacio de tiempo como sin cita.
+                                        Agendar un espacio de tiempo para no citar.
                                     </DialogDescription>
                                 </DialogHeader>
                             </div>
@@ -148,7 +148,7 @@ export const AdminDashboard = () => {
                                 </div>
                                 <div className="pt-2">
                                     <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId} className="w-full h-14 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-xl shadow-slate-200 transition-all active:scale-95">
-                                        {isBlocking ? "Guardando..." : "Confirmar Sin Cita"}
+                                        {isBlocking ? "Guardando..." : "Confirmar NO CITAR"}
                                     </Button>
                                     <Button variant="ghost" onClick={() => setIsBlockDialogOpen(false)} className="w-full mt-2 rounded-xl h-10 font-bold text-slate-400">Cancelar</Button>
                                 </div>
