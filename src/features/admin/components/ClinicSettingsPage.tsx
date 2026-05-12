@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HospitalSettings } from './HospitalSettings';
-import type { ClinicProfile } from '@/features/appointments/types';
+import type { DoctorProfile } from '@/features/appointments/types';
 
 const DEFAULT_AVISO = `Con fundamento en los artículos 15 y 16 de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, hacemos de su conocimiento que los datos personales y sensibles recabados (nombre, datos de contacto, historial clínico) serán utilizados exclusivamente para la prestación de servicios médicos, seguimiento de su salud y administración de citas. Sus datos son resguardados con medidas de seguridad conforme a la NOM-024-SSA3-2012. Usted tiene derecho de Acceso, Rectificación, Cancelación y Oposición (ARCO) sobre sus datos.`;
 
@@ -16,15 +16,15 @@ export const ClinicSettingsPage = () => {
     const { appId } = useAuth();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
-    const [profile, setProfile] = useState<ClinicProfile>({
+    const [activeTab, setActiveTab] = useState<string>(() => {
+        return localStorage.getItem('clinic_settings_tab') || 'profile';
+    });
+    const [profile, setProfile] = useState<DoctorProfile>({
         appId: appId || '',
-        clinicName: '',
         doctorName: '',
         cedulaProfesional: '',
         especialidad: '',
         institucionEgreso: '',
-        telefonoClinica: '',
-        direccionClinica: '',
         logoUrl: '',
         avisoPrivacidad: DEFAULT_AVISO,
     });
@@ -35,20 +35,17 @@ export const ClinicSettingsPage = () => {
             setLoading(true);
             const { data } = await supabase
                 .from('clinic_settings')
-                .select('*')
+                .select('app_id, doctor_name, cedula_profesional, especialidad, institucion_egreso, logo_url, aviso_privacidad')
                 .eq('app_id', appId)
                 .maybeSingle();
 
             if (data) {
                 setProfile({
                     appId: data.app_id,
-                    clinicName: data.clinic_name || '',
                     doctorName: data.doctor_name || '',
                     cedulaProfesional: data.cedula_profesional || '',
                     especialidad: data.especialidad || '',
                     institucionEgreso: data.institucion_egreso || '',
-                    telefonoClinica: data.telefono_clinica || '',
-                    direccionClinica: data.direccion_clinica || '',
                     logoUrl: data.logo_url || '',
                     avisoPrivacidad: data.aviso_privacidad || DEFAULT_AVISO,
                 });
@@ -64,13 +61,10 @@ export const ClinicSettingsPage = () => {
         try {
             const { error } = await supabase.from('clinic_settings').upsert({
                 app_id: appId,
-                clinic_name: profile.clinicName,
                 doctor_name: profile.doctorName,
                 cedula_profesional: profile.cedulaProfesional,
                 especialidad: profile.especialidad,
                 institucion_egreso: profile.institucionEgreso,
-                telefono_clinica: profile.telefonoClinica,
-                direccion_clinica: profile.direccionClinica,
                 logo_url: profile.logoUrl,
                 aviso_privacidad: profile.avisoPrivacidad,
                 updated_at: new Date().toISOString(),
@@ -86,7 +80,7 @@ export const ClinicSettingsPage = () => {
         }
     };
 
-    const set = (key: keyof ClinicProfile, val: string) =>
+    const set = (key: keyof DoctorProfile, val: string) =>
         setProfile(p => ({ ...p, [key]: val }));
 
     if (loading) {
@@ -110,7 +104,7 @@ export const ClinicSettingsPage = () => {
                 </div>
             </div>
 
-            <Tabs defaultValue="profile" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); localStorage.setItem('clinic_settings_tab', v); }} className="space-y-6">
                 <TabsList className="bg-slate-100 p-1 rounded-2xl w-full sm:w-auto h-auto grid grid-cols-2">
                     <TabsTrigger value="profile" className="rounded-xl py-3 px-8 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
                         <User className="w-4 h-4 mr-2" />
@@ -143,16 +137,7 @@ export const ClinicSettingsPage = () => {
                         </CardHeader>
                         <CardContent className="pt-6 space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Clínica / Institución</label>
-                                    <Input
-                                        value={profile.clinicName}
-                                        onChange={e => set('clinicName', e.target.value)}
-                                        placeholder="Ej. Clínica Dental Sonrisas"
-                                        className="h-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all shadow-sm"
-                                    />
-                                </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 md:col-span-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Nombre Completo</label>
                                     <Input
                                         value={profile.doctorName}

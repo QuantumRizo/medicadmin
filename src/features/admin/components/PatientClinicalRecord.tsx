@@ -4,7 +4,7 @@ import { es } from 'date-fns/locale';
 import { Activity, Phone, Mail, Clock, FileText, User, AlertCircle, Save, Trash2, Printer, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
-import type { Patient, Appointment, MedicalHistory, Hospital, ClinicalSession, ClinicProfile } from '../../appointments/types';
+import type { Patient, Appointment, MedicalHistory, Hospital, ClinicalSession, DoctorProfile } from '../../appointments/types';
 import { logActivity } from '@/lib/audit';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -66,7 +66,7 @@ export const PatientClinicalRecord = ({
     const [patient, setPatient] = useState<Patient>(initialPatient);
     const [generalNotes, setGeneralNotes] = useState<string>(initialPatient.notes || '');
     const [selectedDetailApt, setSelectedDetailApt] = useState<Appointment | null>(null);
-    const [clinicProfile, setClinicProfile] = useState<ClinicProfile | null>(null);
+    const [clinicProfile, setClinicProfile] = useState<DoctorProfile | null>(null);
     const [showPrivacyModal, setShowPrivacyModal] = useState(false);
     const { appId } = useAuth();
 
@@ -106,25 +106,20 @@ export const PatientClinicalRecord = ({
         normalizeForCompare({ name: patient.name, phone: patient.phone, email: patient.email }) !== initialCoreStr;
 
 
-    // Cargar perfil clínico para el PDF y aviso de privacidad
+    // Cargar perfil del médico para PDF y aviso de privacidad
     useEffect(() => {
         if (!appId) return;
         supabase
             .from('clinic_settings')
-            .select('*')
+            .select('app_id, doctor_name, cedula_profesional, especialidad, aviso_privacidad')
             .eq('app_id', appId)
             .maybeSingle()
             .then(({ data }) => {
                 if (data) setClinicProfile({
                     appId: data.app_id,
-                    clinicName: data.clinic_name,
                     doctorName: data.doctor_name,
                     cedulaProfesional: data.cedula_profesional,
                     especialidad: data.especialidad,
-                    institucionEgreso: data.institucion_egreso,
-                    telefonoClinica: data.telefono_clinica,
-                    direccionClinica: data.direccion_clinica,
-                    logoUrl: data.logo_url,
                     avisoPrivacidad: data.aviso_privacidad,
                 });
             });
@@ -133,10 +128,8 @@ export const PatientClinicalRecord = ({
     // ── Imprimir en ventana nueva (sin interferencia de la UI) ──
     const printReport = () => {
         const doctorName = clinicProfile?.doctorName || 'DR. RESPONSABLE';
-        const clinicName = clinicProfile?.clinicName || 'MedicAdmin';
         const especialidad = clinicProfile?.especialidad || 'Expediente Clínico';
         const cedula = clinicProfile?.cedulaProfesional || '';
-        const telefono = clinicProfile?.telefonoClinica || '';
         const today = new Date();
         const todayStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
 
@@ -210,8 +203,7 @@ export const PatientClinicalRecord = ({
       <p>${especialidad}${cedula ? ` &middot; Cédula: ${cedula}` : ''}</p>
     </div>
     <div class="header-right">
-      <p class="clinic">${clinicName}</p>
-      ${telefono ? `<p>Tel: ${telefono}</p>` : ''}
+      <p class="clinic">MedicAdmin</p>
     </div>
   </div>
 
@@ -1262,8 +1254,7 @@ export const PatientClinicalRecord = ({
                         </p>
                     </div>
                     <div className="text-right text-[8pt] text-gray-400">
-                        <p className="font-bold text-gray-600 uppercase">{clinicProfile?.clinicName || 'MedicAdmin'}</p>
-                        {clinicProfile?.telefonoClinica && <p>Tel: {clinicProfile?.telefonoClinica}</p>}
+                        <p className="font-bold text-gray-600 uppercase">MedicAdmin</p>
                     </div>
                 </div>
 

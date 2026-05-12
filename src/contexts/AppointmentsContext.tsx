@@ -94,7 +94,6 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                     date: dateStr,
                     time: timeStr,
                     status: a.status || 'pending',
-                    serviceName: a.service_name,
                     specificService: a.specific_service,
                     appId: a.app_id
                 };
@@ -358,6 +357,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         if (!APP_ID) return;
         try {
             const { error } = await supabase.from('hospitals').insert([{
+                id: crypto.randomUUID(),
                 app_id: APP_ID,
                 name: hospital.name,
                 address: hospital.address,
@@ -367,6 +367,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 is_dental_clinic: hospital.isDentalClinic
             }]);
             if (error) throw error;
+            await fetchData();
         } catch (error) {
             console.error('Error adding hospital:', error);
             throw error;
@@ -391,6 +392,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 .eq('app_id', APP_ID);
             
             if (error) throw error;
+            await fetchData();
         } catch (error) {
             console.error('Error updating hospital:', error);
             throw error;

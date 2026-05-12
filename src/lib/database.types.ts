@@ -24,6 +24,8 @@ export type Database = {
           patient_id: string | null
           reason: string
           specific_service: string | null
+          status: string | null
+          whatsapp_reminder_sent: boolean | null
         }
         Insert: {
           app_id?: string | null
@@ -34,6 +36,8 @@ export type Database = {
           patient_id?: string | null
           reason: string
           specific_service?: string | null
+          status?: string | null
+          whatsapp_reminder_sent?: boolean | null
         }
         Update: {
           app_id?: string | null
@@ -44,6 +48,8 @@ export type Database = {
           patient_id?: string | null
           reason?: string
           specific_service?: string | null
+          status?: string | null
+          whatsapp_reminder_sent?: boolean | null
         }
         Relationships: [
           {
@@ -299,7 +305,6 @@ export type Database = {
       profiles: {
         Row: {
           app_id: string
-          can_upload_files: boolean
           full_name: string
           id: string
           plan_name: string | null
@@ -310,7 +315,6 @@ export type Database = {
         }
         Insert: {
           app_id: string
-          can_upload_files?: boolean
           full_name: string
           id: string
           plan_name?: string | null
@@ -321,7 +325,6 @@ export type Database = {
         }
         Update: {
           app_id?: string
-          can_upload_files?: boolean
           full_name?: string
           id?: string
           plan_name?: string | null

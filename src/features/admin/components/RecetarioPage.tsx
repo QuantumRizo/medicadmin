@@ -8,7 +8,7 @@ import { Printer, Plus, Trash2, Search, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import type { ClinicProfile } from '@/features/appointments/types';
+import type { DoctorProfile } from '@/features/appointments/types';
 
 interface Medication {
     id: string;
@@ -36,7 +36,7 @@ export const RecetarioPage = () => {
         }
     }, [hospitals, selectedHospitalId]);
 
-    const [profile, setProfile] = useState<Partial<ClinicProfile>>({});
+    const [profile, setProfile] = useState<Partial<DoctorProfile>>();
     const [patientName, setPatientName] = useState('');
     const [patientAge, setPatientAge] = useState('');
     const [patientSex, setPatientSex] = useState('');
@@ -47,22 +47,19 @@ export const RecetarioPage = () => {
     const [instructions, setInstructions] = useState('');
     const printRef = useRef<HTMLDivElement>(null);
 
-    // Cargar perfil de la clínica
+    // Cargar perfil del médico
     useEffect(() => {
         if (!appId) return;
         supabase
             .from('clinic_settings')
-            .select('*')
+            .select('doctor_name, cedula_profesional, especialidad, aviso_privacidad')
             .eq('app_id', appId)
             .maybeSingle()
             .then(({ data }) => {
                 if (data) setProfile({
-                    clinicName: data.clinic_name,
                     doctorName: data.doctor_name,
                     cedulaProfesional: data.cedula_profesional,
                     especialidad: data.especialidad,
-                    telefonoClinica: data.telefono_clinica,
-                    direccionClinica: data.direccion_clinica,
                 });
             });
     }, [appId]);
@@ -255,26 +252,23 @@ export const RecetarioPage = () => {
                     <div className="flex items-center gap-4 flex-1">
                         <div>
                             <h1 className="text-2xl font-black text-[#1c334a] leading-tight">
-                                {selectedHospital?.name || profile.clinicName || 'Nombre de la Clínica'}
+                                {selectedHospital?.name || 'Sucursal'}
                             </h1>
                             <p className="text-sm text-gray-500 mt-0.5">
-                                {profile.especialidad || 'Especialidad'}
+                                {profile?.especialidad || 'Especialidad'}
                             </p>
-                            {(selectedHospital?.address || profile.direccionClinica) && (
-                                <p className="text-xs text-gray-400 mt-0.5 max-w-[280px]">{selectedHospital?.address || profile.direccionClinica}</p>
+                            {selectedHospital?.address && (
+                                <p className="text-xs text-gray-400 mt-0.5 max-w-[280px]">{selectedHospital.address}</p>
                             )}
                         </div>
                     </div>
 
                     {/* Doctor */}
                     <div className="text-right shrink-0">
-                        <p className="text-base font-bold text-gray-800">{profile.doctorName || 'Dr. Nombre Apellido'}</p>
-                        <p className="text-xs text-gray-500">{profile.especialidad || ''}</p>
-                        {profile.cedulaProfesional && (
+                        <p className="text-base font-bold text-gray-800">{profile?.doctorName || 'Dr. Nombre Apellido'}</p>
+                        <p className="text-xs text-gray-500">{profile?.especialidad || ''}</p>
+                        {profile?.cedulaProfesional && (
                             <p className="text-xs text-gray-400 mt-0.5">Cédula Prof. {profile.cedulaProfesional}</p>
-                        )}
-                        {profile.telefonoClinica && (
-                            <p className="text-xs text-gray-400">Tel. {profile.telefonoClinica}</p>
                         )}
                     </div>
                 </div>
@@ -356,8 +350,8 @@ export const RecetarioPage = () => {
                 <div className="flex justify-end px-8 pb-8 pt-6 border-t border-dashed border-gray-200 mt-4">
                     <div className="text-center min-w-[200px]">
                         <div className="h-16 border-b border-gray-400 mb-2" />
-                        <p className="text-sm font-bold text-gray-700">{profile.doctorName || 'Dr. Nombre Apellido'}</p>
-                        {profile.cedulaProfesional && (
+                        <p className="text-sm font-bold text-gray-700">{profile?.doctorName || 'Dr. Nombre Apellido'}</p>
+                        {profile?.cedulaProfesional && (
                             <p className="text-xs text-gray-400">Cédula Prof. {profile.cedulaProfesional}</p>
                         )}
                     </div>

@@ -105,18 +105,16 @@ export interface Patient {
 }
 
 // ──────────────────────────────────────────────────────────────
-// NOM-024: Perfil de la clínica / médico (tabla clinic_settings)
+// NOM-024: Perfil del médico (tabla clinic_settings)
+// Los datos de nombre/dirección de cada ubicación viven en Hospital.
 // ──────────────────────────────────────────────────────────────
-export interface ClinicProfile {
+export interface DoctorProfile {
     id?: string;
     appId: string;
-    clinicName?: string;
     doctorName?: string;
     cedulaProfesional?: string;
     especialidad?: string;
     institucionEgreso?: string;
-    telefonoClinica?: string;
-    direccionClinica?: string;
     logoUrl?: string;
     avisoPrivacidad?: string;
 }
@@ -155,12 +153,6 @@ export interface Appointment {
     specificService?: string;
     appId?: string;
 }
-
-export const APPOINTMENT_CONFIG = {
-    START_HOUR: 9,
-    END_HOUR: 15,
-    INTERVAL_MINUTES: 30
-};
 
 export const SERVICES: Service[] = [
     {
