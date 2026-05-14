@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getNow } from '@/lib/dateUtils';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,7 +39,7 @@ interface AdminCalendarProps {
 
 export const AdminCalendar = (_props: AdminCalendarProps) => {
     const { appointments, patients, hospitals, updateAppointment, getAvailableSlots, deleteAppointment } = useAppointments();
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState(getNow());
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
     const [selectedHospitalFilter, setSelectedHospitalFilter] = useState<string>('all');
     const [view, setView] = useState<'month' | 'week'>('week');

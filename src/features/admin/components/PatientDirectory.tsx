@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { format, isAfter, parseISO } from 'date-fns';
+import { getNow } from '@/lib/dateUtils';
 import { es } from 'date-fns/locale';
 import { Search, MapPin, Phone, Mail, Trash2, Calendar, ArrowRight, User, FileText, CalendarPlus, NotebookPen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,7 +49,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
     // --- Optimization: Pre-calculate first upcoming appointment for each patient ---
     const nextAppointmentsMap = useMemo(() => {
         const map = new Map<string, Appointment>();
-        const today = new Date();
+        const today = getNow();
         
         appointments.forEach(a => {
             if (a.reason === 'blocked') return;
@@ -73,7 +74,7 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
                 return dateB.getTime() - dateA.getTime(); // Newest first
             });
 
-        const today = new Date();
+        const today = getNow();
         const upcoming = patientAppts.filter(a => {
             const apptDate = new Date(a.date + 'T' + a.time);
             return isAfter(apptDate, today) && a.reason !== 'blocked';

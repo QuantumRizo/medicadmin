@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isAfter, format, parseISO } from 'date-fns';
+import { getNow, getTodayStr } from '@/lib/dateUtils';
 import { es } from 'date-fns/locale';
 import { Activity, Phone, Mail, Clock, FileText, User, AlertCircle, Save, Trash2, Printer, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
@@ -130,7 +131,7 @@ export const PatientClinicalRecord = ({
         const doctorName = clinicProfile?.doctorName || 'DR. RESPONSABLE';
         const especialidad = clinicProfile?.especialidad || 'Expediente Clínico';
         const cedula = clinicProfile?.cedulaProfesional || '';
-        const today = new Date();
+        const today = getNow();
         const todayStr = `${String(today.getDate()).padStart(2,'0')}/${String(today.getMonth()+1).padStart(2,'0')}/${today.getFullYear()}`;
 
         const calcAge = (dob: string | undefined) => {
@@ -301,7 +302,7 @@ export const PatientClinicalRecord = ({
         if (sessions.length === 0 && generalNotes?.trim()) {
             const migrated: ClinicalSession = {
                 id: crypto.randomUUID(),
-                date: format(new Date(), 'yyyy-MM-dd'),
+                date: getTodayStr(),
                 content: generalNotes.trim(),
                 finalized: false,
             };
@@ -444,7 +445,7 @@ export const PatientClinicalRecord = ({
     const calculateAge = (dobString?: string) => {
         if (!dobString) return '';
         const dob = new Date(dobString);
-        const today = new Date();
+        const today = getNow();
         let age = today.getFullYear() - dob.getFullYear();
         const m = today.getMonth() - dob.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
@@ -531,7 +532,7 @@ export const PatientClinicalRecord = ({
         .filter(a => a.patientId === patient.id)
         .sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
 
-    const todayDate = new Date();
+    const todayDate = getNow();
     const upcomingAppts = patientAppointments.filter(a => {
         const apptDate = new Date(a.date + 'T' + a.time);
         return isAfter(apptDate, todayDate) && a.reason !== 'blocked';
@@ -1069,7 +1070,7 @@ export const PatientClinicalRecord = ({
                             ...sessions,
                             {
                                 id: crypto.randomUUID(),
-                                date: format(new Date(), 'yyyy-MM-dd'),
+                                date: getTodayStr(),
                                 content,
                                 finalized: false,
                             }
@@ -1080,7 +1081,7 @@ export const PatientClinicalRecord = ({
                 const finalizeSession = async () => {
                     if (!activeSession?.content?.trim()) return;
                     const updated = sessions.map(s =>
-                        s.finalized ? s : { ...s, finalized: true, finalizedAt: new Date().toISOString() }
+                        s.finalized ? s : { ...s, finalized: true, finalizedAt: getNow().toISOString() }
                     );
                     handleChange('clinicalSessions', updated);
                     if (appId) logActivity({ appId, patientId: patient.id, action: 'FINALIZE_NOTE' });
@@ -1264,7 +1265,7 @@ export const PatientClinicalRecord = ({
                         HISTORIA CLÍNICA CONSOLIDADA
                     </h2>
                     <p className="text-[8pt] font-medium text-gray-400">
-                        Fecha de emisión: {format(new Date(), "dd/MM/yyyy")}
+                        Fecha de emisión: {format(getNow(), "dd/MM/yyyy")}
                     </p>
                 </div>
 

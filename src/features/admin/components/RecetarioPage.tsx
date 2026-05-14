@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAppointments } from '@/features/appointments/hooks/useAppointments';
 import { format } from 'date-fns';
+import { getTodayStr } from '@/lib/dateUtils';
 import { es } from 'date-fns/locale';
 import { Printer, Plus, Trash2, Search, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -40,7 +41,7 @@ export const RecetarioPage = () => {
     const [patientName, setPatientName] = useState('');
     const [patientAge, setPatientAge] = useState('');
     const [patientSex, setPatientSex] = useState('');
-    const [date, setDate] = useState(() => format(new Date(), 'yyyy-MM-dd'));
+    const [date, setDate] = useState(() => getTodayStr());
     
     const [diagnosis, setDiagnosis] = useState('');
     const [medications, setMedications] = useState<Medication[]>([emptyMed()]);

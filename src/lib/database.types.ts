@@ -25,7 +25,6 @@ export type Database = {
           reason: string
           specific_service: string | null
           status: string | null
-          whatsapp_reminder_sent: boolean | null
         }
         Insert: {
           app_id?: string | null
@@ -37,7 +36,6 @@ export type Database = {
           reason: string
           specific_service?: string | null
           status?: string | null
-          whatsapp_reminder_sent?: boolean | null
         }
         Update: {
           app_id?: string | null
@@ -49,7 +47,6 @@ export type Database = {
           reason?: string
           specific_service?: string | null
           status?: string | null
-          whatsapp_reminder_sent?: boolean | null
         }
         Relationships: [
           {

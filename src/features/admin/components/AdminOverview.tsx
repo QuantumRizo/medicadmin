@@ -1,7 +1,8 @@
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Calendar, TrendingUp, Clock, MapPin } from 'lucide-react';
-import { format, isToday, parseISO, isThisWeek, isAfter } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { isTodayMX, isThisWeekMX, getNow, getTodayStr } from '@/lib/dateUtils';
 import { es } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +49,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
     // Metrics
     // Metrics (Global Aggregation)
     const todayAppointments = appointments.filter(a =>
-        isToday(parseISO(a.date))
+        isTodayMX(a.date)
     );
 
     const activeHospitalsCount = new Set(
@@ -58,7 +59,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
     // const newPatientsThisWeek = ... // Removed unused variable
 
     const weekAppointments = appointments.filter(a =>
-        isThisWeek(parseISO(a.date))
+        isThisWeekMX(a.date)
     );
 
     const totalActivePatients = new Set(
@@ -171,7 +172,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                         <CardHeader className="p-6 pb-2 border-b border-slate-50 bg-slate-50/30">
                             <CardTitle className="text-lg font-extrabold text-[#0f172a]">Agenda de Hoy</CardTitle>
                             <CardDescription className="text-sm font-medium text-slate-400 mt-1 capitalize">
-                                {format(new Date(), "EEEE, d 'de' MMMM", { locale: es })}
+                                {format(getNow(), "EEEE, d 'de' MMMM", { locale: es })}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-6 pt-4 max-h-[500px] overflow-x-hidden overflow-y-auto custom-scrollbar">
@@ -245,7 +246,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                             <CardContent className="p-6 pt-0">
                                 <div className="space-y-4">
                                     {weekAppointments
-                                        .filter(a => !isToday(parseISO(a.date)) && isAfter(parseISO(a.date), new Date()))
+                                        .filter(a => !isTodayMX(a.date) && a.date >= getTodayStr())
                                         .sort((a, b) => new Date(a.date + 'T' + a.time).getTime() - new Date(b.date + 'T' + b.time).getTime())
                                         .slice(0, 5)
                                         .map(apt => {
@@ -291,7 +292,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                                     {hospitals.map(hospital => {
                                         const hospitalAppts = appointments.filter(a => a.hospitalId === hospital.id);
                                         // const hospitalPatients = new Set(hospitalAppts.map(a => a.patientId)).size;
-                                        const todayHospitalAppts = hospitalAppts.filter(a => isToday(parseISO(a.date))).length;
+                                        const todayHospitalAppts = hospitalAppts.filter(a => isTodayMX(a.date)).length;
 
                                         return (
                                             <div key={hospital.id} className="flex items-center justify-between pb-2 border-b last:border-0 last:pb-0">

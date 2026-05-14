@@ -6,6 +6,7 @@ import type { Patient, Appointment } from "../../appointments/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { format, parseISO } from "date-fns";
+import { getNow } from '@/lib/dateUtils';
 import { es } from "date-fns/locale";
 
 interface GlobalSearchProps {
@@ -61,7 +62,7 @@ export const GlobalSearch = ({ onSelectPatient }: GlobalSearchProps) => {
         return hospitals.find((h: any) => h.id === lastAppt.hospitalId)?.name || "Desconocido";
     };
 
-    const today = new Date();
+    const today = getNow();
     today.setHours(0, 0, 0, 0); // Normalize today to start of day
 
     return (

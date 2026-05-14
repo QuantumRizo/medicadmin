@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
+import { getNow } from '@/lib/dateUtils';
 import { SERVICES } from '../features/appointments/types';
 import type { Appointment, Patient, Hospital } from '../features/appointments/types';
 import { isAppointmentPast } from '@/lib/dateUtils';
@@ -244,8 +245,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         const endHour = endH + (endM / 60);
         const interval = hospital.slotInterval;
         const existingForDay = appointments.filter(a => a.date === date);
-        const mxTimeString = new Date().toLocaleString("en-US", { timeZone: "America/Mexico_City" });
-        const now = new Date(mxTimeString);
+        const now = getNow();
         const [year, month, day] = date.split('-').map(Number);
         let currentMinute = startHour * 60;
         const endMinute = endHour * 60;

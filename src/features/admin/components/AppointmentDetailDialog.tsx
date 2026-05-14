@@ -160,18 +160,6 @@ export const AppointmentDetailDialog = ({
                                         <span className="text-slate-900 font-black text-right">{patient!.phone}</span>
                                     </div>
                                 )}
-                                {appointment.status === 'confirmed' && (
-                                    <div className="flex items-center justify-between pt-2 border-t border-emerald-100 text-sm gap-2 text-emerald-700">
-                                        <span className="font-bold shrink-0">WhatsApp:</span>
-                                        <span className="font-black text-right">Confirmó por WhatsApp</span>
-                                    </div>
-                                )}
-                                {appointment.status === 'cancelled' && (
-                                    <div className="flex items-center justify-between pt-2 border-t border-rose-100 text-sm gap-2 text-rose-700">
-                                        <span className="font-bold shrink-0">WhatsApp:</span>
-                                        <span className="font-black text-right">Canceló por WhatsApp</span>
-                                    </div>
-                                )}
                             </div>
                         </div>
 

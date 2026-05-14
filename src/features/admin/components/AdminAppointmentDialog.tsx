@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { type Hospital } from "@/features/appointments/types";
 import { ArrowLeft, Building2, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { getTodayStr } from '@/lib/dateUtils';
 import { useAppointments } from "../../appointments/hooks/useAppointments";
 import { standardizePhone } from "@/lib/utils";
 import { AlertTriangle } from "lucide-react";
@@ -278,7 +279,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                         id="admin-date"
                                         type="date"
                                         value={appointment.date}
-                                        min={(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })()}
+                                        min={getTodayStr()}
                                         onChange={(e) => handleAppointmentChange('date', e.target.value)}
                                         className="rounded-xl border-slate-200 h-12 focus-visible:ring-sky-500 font-bold text-slate-700"
                                     />
