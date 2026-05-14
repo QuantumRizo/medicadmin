@@ -19,6 +19,7 @@ export type Database = {
           app_id: string | null
           created_at: string | null
           date: string
+          time: string
           hospital_id: string | null
           id: string
           patient_id: string | null
@@ -30,6 +31,7 @@ export type Database = {
           app_id?: string | null
           created_at?: string | null
           date: string
+          time: string
           hospital_id?: string | null
           id?: string
           patient_id?: string | null
@@ -41,6 +43,7 @@ export type Database = {
           app_id?: string | null
           created_at?: string | null
           date?: string
+          time?: string
           hospital_id?: string | null
           id?: string
           patient_id?: string | null
@@ -96,42 +99,33 @@ export type Database = {
           app_id: string
           aviso_privacidad: string | null
           cedula_profesional: string | null
-          clinic_name: string | null
-          direccion_clinica: string | null
           doctor_name: string | null
           especialidad: string | null
           id: string
           institucion_egreso: string | null
           logo_url: string | null
-          telefono_clinica: string | null
           updated_at: string | null
         }
         Insert: {
           app_id: string
           aviso_privacidad?: string | null
           cedula_profesional?: string | null
-          clinic_name?: string | null
-          direccion_clinica?: string | null
           doctor_name?: string | null
           especialidad?: string | null
           id?: string
           institucion_egreso?: string | null
           logo_url?: string | null
-          telefono_clinica?: string | null
           updated_at?: string | null
         }
         Update: {
           app_id?: string
           aviso_privacidad?: string | null
           cedula_profesional?: string | null
-          clinic_name?: string | null
-          direccion_clinica?: string | null
           doctor_name?: string | null
           especialidad?: string | null
           id?: string
           institucion_egreso?: string | null
           logo_url?: string | null
-          telefono_clinica?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -172,47 +166,33 @@ export type Database = {
         }
         Relationships: []
       }
+
       legal_cases: {
         Row: {
-          app_id: string | null
-          case_type: string | null
           client_id: string | null
-          counterpart: string | null
-          court_number: string | null
           created_at: string | null
-          documents: Json | null
+          description: string | null
           id: string
-          judge_name: string | null
           status: string | null
           timeline: Json | null
           title: string
           updated_at: string | null
         }
         Insert: {
-          app_id?: string | null
-          case_type?: string | null
           client_id?: string | null
-          counterpart?: string | null
-          court_number?: string | null
           created_at?: string | null
-          documents?: Json | null
+          description?: string | null
           id?: string
-          judge_name?: string | null
           status?: string | null
           timeline?: Json | null
           title: string
           updated_at?: string | null
         }
         Update: {
-          app_id?: string | null
-          case_type?: string | null
           client_id?: string | null
-          counterpart?: string | null
-          court_number?: string | null
           created_at?: string | null
-          documents?: Json | null
+          description?: string | null
           id?: string
-          judge_name?: string | null
           status?: string | null
           timeline?: Json | null
           title?: string
@@ -228,6 +208,7 @@ export type Database = {
           },
         ]
       }
+
       patient_uploads: {
         Row: {
           created_at: string | null
