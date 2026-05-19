@@ -206,18 +206,12 @@ export const HospitalSettings = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-2 border-t border-slate-50">
+                                            <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-50">
                                                 <div className="space-y-1">
                                                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Horario</span>
                                                     <div className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
                                                         <Clock className="w-3 h-3 text-slate-400" />
                                                         {hospital.startTime} - {hospital.endTime}
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Intervalo</span>
-                                                    <div className="text-sm font-bold text-slate-700">
-                                                        Cada {hospital.slotInterval} min
                                                     </div>
                                                 </div>
 
