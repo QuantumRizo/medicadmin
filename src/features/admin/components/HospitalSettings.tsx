@@ -85,7 +85,7 @@ export const HospitalSettings = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase text-slate-500">Hora Inicio</Label>
                     <Input 
@@ -101,18 +101,6 @@ export const HospitalSettings = () => {
                         type="time"
                         value={editForm.endTime || '18:00'} 
                         onChange={e => setEditForm({...editForm, endTime: e.target.value})}
-                        className="rounded-xl border-slate-200"
-                    />
-                </div>
-                <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-slate-500">Intervalo (minutos)</Label>
-                    <Input 
-                        type="number"
-                        min="10"
-                        max="120"
-                        step="5"
-                        value={editForm.slotInterval || 15} 
-                        onChange={e => setEditForm({...editForm, slotInterval: parseInt(e.target.value)})}
                         className="rounded-xl border-slate-200"
                     />
                 </div>
