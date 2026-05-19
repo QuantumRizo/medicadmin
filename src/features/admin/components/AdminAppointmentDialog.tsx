@@ -79,8 +79,13 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
         serviceName: '', // Added for specific service description
         date: '',
         time: '',
-        reason: ''
+        reason: '',
+        slotCount: 2
     });
+
+    // Get the interval for the selected hospital to calculate durations
+    const selectedHospitalForCalc = hospitals.find(h => h.id === bookingHospitalId);
+    const intervalMinutes = selectedHospitalForCalc?.slotInterval || 15;
 
     const handlePatientChange = (key: string, value: string) => {
         setPatient(prev => ({ ...prev, [key]: value }));
@@ -97,7 +102,8 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
     };
 
     const handleAppointmentChange = (key: string, value: string) => {
-        setAppointment(prev => ({ ...prev, [key]: value }));
+        const parsed = key === 'slotCount' ? parseInt(value, 10) : value;
+        setAppointment(prev => ({ ...prev, [key]: parsed }));
     };
 
     const handleSubmit = async () => {
@@ -123,14 +129,15 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                     date: appointment.date,
                     time: appointment.time,
                     reason: appointment.reason,
-                    specificService: appointment.reason === 'specific-service' ? appointment.serviceName : undefined
+                    specificService: appointment.reason === 'specific-service' ? appointment.serviceName : undefined,
+                    slotCount: appointment.slotCount
                 },
                 patient
             );
             onOpenChange(false);
             // Reset form
             setPatient({ name: '', email: '', emailError: '', phone: '', notes: '' });
-            setAppointment({ serviceName: '', date: '', time: '', reason: '' });
+            setAppointment({ serviceName: '', date: '', time: '', reason: '', slotCount: 2 });
             setBookingHospitalId(null);
         } catch (error: any) {
             console.error("Error scheduling:", error);
@@ -139,6 +146,8 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
             setIsSubmitting(false);
         }
     };
+
+    const slotOptions = [1, 2, 3, 4, 6, 8];
 
     const selectedHospital = hospitals.find(h => h.id === bookingHospitalId);
 
@@ -302,6 +311,55 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                         )}
                                     </select>
                                 </div>
+                            </div>
+
+
+                            {/* Slot duration picker */}
+                            <div className="space-y-3">
+                                <Label className="text-slate-700 font-bold ml-1">
+                                    ¿Cuánto dura la cita?
+                                </Label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {slotOptions.map(n => {
+                                        const mins = n * intervalMinutes;
+                                        const label = mins >= 60
+                                            ? `${Math.floor(mins/60)}h${mins%60 ? ` ${mins%60}m` : ''}`
+                                            : `${mins} min`;
+                                        const isSelected = appointment.slotCount === n;
+                                        return (
+                                            <button
+                                                key={n}
+                                                type="button"
+                                                onClick={() => handleAppointmentChange('slotCount', String(n))}
+                                                className={`h-14 rounded-2xl text-sm font-black transition-all flex flex-col items-center justify-center gap-0.5 border-2 ${
+                                                    isSelected
+                                                        ? 'bg-sky-500 text-white border-sky-500 shadow-lg shadow-sky-200 scale-105'
+                                                        : 'bg-white text-slate-600 border-slate-200 hover:border-sky-300 hover:bg-sky-50'
+                                                }`}
+                                            >
+                                                <span className={`text-base leading-none ${isSelected ? 'text-white' : 'text-slate-800'}`}>{label}</span>
+                                                <span className={`text-[10px] leading-none font-bold ${isSelected ? 'text-sky-100' : 'text-slate-400'}`}>{n} {n === 1 ? 'slot' : 'slots'}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                {appointment.time && (
+                                    <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-xl border border-sky-100 text-sm text-sky-700 font-bold animate-in fade-in slide-in-from-top-1">
+                                        <span>🕐</span>
+                                        <span>
+                                            {formatTime(appointment.time)}
+                                            {' → '}
+                                            {(() => {
+                                                const [h, m] = appointment.time.split(':').map(Number);
+                                                const endMin = h * 60 + m + appointment.slotCount * intervalMinutes;
+                                                const eh = Math.floor(endMin / 60);
+                                                const em = endMin % 60;
+                                                return formatTime(`${eh.toString().padStart(2,'0')}:${em.toString().padStart(2,'0')}`);
+                                            })()}
+                                            &nbsp;·&nbsp;{appointment.slotCount * intervalMinutes} min en total
+                                        </span>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="text-sm text-gray-500 mt-2">

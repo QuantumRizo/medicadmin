@@ -6,7 +6,7 @@ export interface Hospital {
     image: string;
     startTime: string;   // ej. '09:00'
     endTime: string;     // ej. '20:30'
-    slotInterval: number; // ej. 30
+    slotInterval: number; // ej. 15
     isDentalClinic?: boolean;
 }
 
@@ -151,6 +151,7 @@ export interface Appointment {
     time: string;
     status: 'pending' | 'confirmed' | 'cancelled' | 'attended' | 'no-show';
     specificService?: string;
+    slotCount: number; // cuántos slots de 15 min ocupa la cita (default: 2 = 30 min)
     appId?: string;
 }
 

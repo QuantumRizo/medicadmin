@@ -21,7 +21,7 @@ interface AppointmentsContextType {
     getAppointmentsByHospital: (hospitalId: string) => Appointment[];
     deleteAppointment: (appointmentId: string) => Promise<void>;
     deletePatient: (patientId: string) => Promise<void>;
-    blockSlot: (hospitalId: string, date: string, time: string) => Promise<void>;
+    blockSlot: (hospitalId: string, date: string, time: string, slotCount?: number) => Promise<void>;
     updateAppointment: (appointmentId: string, updates: Partial<Appointment>) => Promise<void>;
     addPatient: (patientData: { name: string, email: string, phone: string, notes?: string }) => Promise<Patient>;
     
@@ -96,6 +96,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                     time: timeStr,
                     status: a.status || 'pending',
                     specificService: a.specific_service,
+                    slotCount: a.slot_count ?? 2,
                     appId: a.app_id
                 };
             });
@@ -107,7 +108,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 image: h.image,
                 startTime: h.start_time,
                 endTime: h.end_time,
-                slotInterval: h.slot_interval,
+                slotInterval: h.slot_interval ?? 15,
                 isDentalClinic: h.is_dental_clinic || false
             }));
 
@@ -196,6 +197,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 hospital_id: appointmentData.hospitalId,
                 reason: appointmentData.reason,
                 specific_service: appointmentData.specificService,
+                slot_count: appointmentData.slotCount ?? 2,
                 date: isoDateTime,
                 app_id: APP_ID
             }]);
@@ -235,7 +237,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const getAvailableSlots = (date: string, hospitalId: string) => {
+    const getAvailableSlots = (date: string, hospitalId: string): string[] => {
         const hospital = hospitals.find(h => h.id === hospitalId);
         if (!hospital) return [];
         const slots: string[] = [];
@@ -243,10 +245,22 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         const [endH, endM] = hospital.endTime.split(':').map(Number);
         const startHour = startH + (startM / 60);
         const endHour = endH + (endM / 60);
-        const interval = hospital.slotInterval;
+        const interval = hospital.slotInterval || 15;
         const existingForDay = appointments.filter(a => a.date === date);
         const now = getNow();
         const [year, month, day] = date.split('-').map(Number);
+
+        // Build a set of all occupied minutes (each appointment blocks slotCount slots)
+        const occupiedMinutes = new Set<number>();
+        for (const appt of existingForDay) {
+            const [ah, am] = appt.time.split(':').map(Number);
+            const startMin = ah * 60 + am;
+            const count = appt.slotCount ?? 2;
+            for (let i = 0; i < count; i++) {
+                occupiedMinutes.add(startMin + i * interval);
+            }
+        }
+
         let currentMinute = startHour * 60;
         const endMinute = endHour * 60;
         while (currentMinute < endMinute) {
@@ -255,8 +269,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
             const slotDateTime = new Date(year, month - 1, day, h, m);
             if (slotDateTime <= now) { currentMinute += interval; continue; }
-            const isBlocked = existingForDay.some(a => a.time === timeString);
-            if (!isBlocked) slots.push(timeString);
+            if (!occupiedMinutes.has(currentMinute)) slots.push(timeString);
             currentMinute += interval;
         }
         return slots;
@@ -294,7 +307,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const blockSlot = async (hospitalId: string, date: string, time: string) => {
+    const blockSlot = async (hospitalId: string, date: string, time: string, slotCount: number = 2) => {
         try {
             let blockPatientId;
             const systemEmail = `block_${APP_ID}@system.local`;
@@ -319,6 +332,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 reason: 'blocked',
                 date: isoDateTime,
                 specific_service: 'Horario Bloqueado Manualmente',
+                slot_count: slotCount,
                 app_id: APP_ID
             }]);
             if (error) throw error;
@@ -337,6 +351,8 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             }
             const dbUpdates: any = {};
             if (updates.specificService) dbUpdates.specific_service = updates.specificService;
+            if (updates.status) dbUpdates.status = updates.status;
+            if (updates.slotCount !== undefined) dbUpdates.slot_count = updates.slotCount;
             if (updates.date && updates.time) {
                 const newIsoDateTime = `${updates.date}T${updates.time}:00`;
                 const { data: conflictAppointments, error: conflictError } = await supabase.from('appointments').select('id').eq('app_id', APP_ID).eq('date', newIsoDateTime).neq('id', appointmentId);
@@ -363,7 +379,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 address: hospital.address,
                 start_time: hospital.startTime,
                 end_time: hospital.endTime,
-                slot_interval: hospital.slotInterval,
+                slot_interval: hospital.slotInterval ?? 15,
                 is_dental_clinic: hospital.isDentalClinic
             }]);
             if (error) throw error;

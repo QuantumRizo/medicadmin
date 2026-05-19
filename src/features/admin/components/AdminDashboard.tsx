@@ -35,7 +35,11 @@ export const AdminDashboard = () => {
 
     const [blockDate, setBlockDate] = useState('');
     const [blockTime, setBlockTime] = useState('');
+    const [blockSlotCount, setBlockSlotCount] = useState(2);
     const [isBlocking, setIsBlocking] = useState(false);
+
+    const blockSlotOptions = [1, 2, 3, 4, 6, 8];
+    const blockIntervalMinutes = hospitals.find(h => h.id === blockHospitalId)?.slotInterval || 15;
 
     const [bookingPatientData, setBookingPatientData] = useState<{ name: string, email: string, phone: string, notes?: string } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
@@ -50,9 +54,10 @@ export const AdminDashboard = () => {
                 setIsBlocking(false);
                 return;
             }
-            await blockSlot(blockHospitalId, blockDate, blockTime);
+            await blockSlot(blockHospitalId, blockDate, blockTime, blockSlotCount);
             setBlockDate('');
             setBlockTime('');
+            setBlockSlotCount(2);
             setIsBlockDialogOpen(false);
         } catch (error: any) {
             alert(error?.message || "Error al bloquear horario");
@@ -147,6 +152,50 @@ export const AdminDashboard = () => {
                                     </div>
                                 </div>
                                 <div className="pt-2">
+                                    {/* Slot count picker */}
+                                    <div className="space-y-2 mb-4">
+                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+                                            ¿Cuánto tiempo bloquear?
+                                        </label>
+                                        <div className="grid grid-cols-3 gap-2">
+                                            {blockSlotOptions.map(n => {
+                                                const mins = n * blockIntervalMinutes;
+                                                const label = mins >= 60
+                                                    ? `${Math.floor(mins/60)}h${mins%60 ? ` ${mins%60}m` : ''}`
+                                                    : `${mins} min`;
+                                                const isSelected = blockSlotCount === n;
+                                                return (
+                                                    <button
+                                                        key={n}
+                                                        type="button"
+                                                        onClick={() => setBlockSlotCount(n)}
+                                                        className={`h-12 rounded-xl text-xs font-black transition-all flex flex-col items-center justify-center border-2 ${
+                                                            isSelected
+                                                                ? 'bg-slate-800 text-white border-slate-800 shadow-lg scale-105'
+                                                                : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100 hover:border-slate-400'
+                                                        }`}
+                                                    >
+                                                        <span>{label}</span>
+                                                        <span className={`text-[9px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>{n}s</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                        {blockTime && (
+                                            <div className="flex items-center gap-2 p-2.5 bg-slate-100 rounded-xl text-xs text-slate-600 font-bold">
+                                                <span>🔒</span>
+                                                <span>
+                                                    Bloqueando {formatTime(blockTime)} → {(() => {
+                                                        const [h, m] = blockTime.split(':').map(Number);
+                                                        const endMin = h * 60 + m + blockSlotCount * blockIntervalMinutes;
+                                                        const eh = Math.floor(endMin / 60);
+                                                        const em = endMin % 60;
+                                                        return formatTime(`${eh.toString().padStart(2,'0')}:${em.toString().padStart(2,'0')}`);
+                                                    })()} · {blockSlotCount * blockIntervalMinutes} min
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                     <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId} className="w-full h-14 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-xl shadow-slate-200 transition-all active:scale-95">
                                         {isBlocking ? "Guardando..." : "Confirmar NO CITAR"}
                                     </Button>

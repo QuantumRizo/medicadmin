@@ -44,9 +44,15 @@ export const AppointmentDetailDialog = ({
     const [isEditing, setIsEditing] = useState(false);
     const [editDate, setEditDate] = useState("");
     const [editTime, setEditTime] = useState("");
+    const [editSlotCount, setEditSlotCount] = useState(2);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!appointment) return null;
+
+    const hospital = hospitals.find(h => h.id === appointment.hospitalId);
+    const intervalMinutes = hospital?.slotInterval || 15;
+    const slotOptions = [1, 2, 3, 4, 6, 8];
+    const appointmentDurationMins = (appointment.slotCount ?? 2) * intervalMinutes;
 
     const hospitalIndex = hospitals.findIndex(h => h.id === appointment.hospitalId);
     const color = getApptColor(appointment.reason, appointment.status, hospitalIndex >= 0 ? hospitalIndex : 0);
@@ -54,6 +60,7 @@ export const AppointmentDetailDialog = ({
     const handleStartEditing = () => {
         setEditDate(appointment.date);
         setEditTime(appointment.time);
+        setEditSlotCount(appointment.slotCount ?? 2);
         setIsEditing(true);
     };
 
@@ -65,7 +72,7 @@ export const AppointmentDetailDialog = ({
         if (!editDate || !editTime) return;
         setIsSubmitting(true);
         try {
-            await onUpdate(appointment.id, { date: editDate, time: editTime });
+            await onUpdate(appointment.id, { date: editDate, time: editTime, slotCount: editSlotCount });
             setIsEditing(false);
         } finally {
             setIsSubmitting(false);
@@ -135,6 +142,9 @@ export const AppointmentDetailDialog = ({
                                     <span className="text-[10px] font-black uppercase tracking-widest">Horario</span>
                                 </div>
                                 <span className="text-sm font-black text-slate-900">{formatTime(appointment.time)}</span>
+                                <span className="text-[11px] font-bold text-slate-400 mt-0.5">
+                                    {appointmentDurationMins} min · {appointment.slotCount ?? 2} {(appointment.slotCount ?? 2) === 1 ? 'slot' : 'slots'}
+                                </span>
                             </div>
                         </div>
 
@@ -259,6 +269,52 @@ export const AppointmentDetailDialog = ({
                                             MANTENER ACTUAL: {formatTime(appointment.time)}
                                         </button>
                                     </div>
+                                </div>
+
+                                {/* Slot count picker for reschedule */}
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2 text-slate-400">
+                                        <Clock className="w-4 h-4" />
+                                        <label className="text-[10px] font-black uppercase tracking-widest">Duración</label>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        {slotOptions.map(n => {
+                                            const mins = n * intervalMinutes;
+                                            const label = mins >= 60
+                                                ? `${Math.floor(mins/60)}h${mins%60 ? ` ${mins%60}m` : ''}`
+                                                : `${mins} min`;
+                                            const isSelected = editSlotCount === n;
+                                            return (
+                                                <button
+                                                    key={n}
+                                                    type="button"
+                                                    onClick={() => setEditSlotCount(n)}
+                                                    className={`h-12 rounded-xl text-xs font-black transition-all flex flex-col items-center justify-center border-2 ${
+                                                        isSelected
+                                                            ? 'bg-[#1c334a] text-white border-[#1c334a] shadow-lg scale-105'
+                                                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
+                                                    }`}
+                                                >
+                                                    <span>{label}</span>
+                                                    <span className={`text-[9px] ${isSelected ? 'text-slate-300' : 'text-slate-400'}`}>{n}s</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {editTime && (
+                                        <div className="flex items-center gap-2 p-2.5 bg-sky-50 rounded-xl border border-sky-100 text-xs text-sky-700 font-bold">
+                                            <span>🕐</span>
+                                            <span>
+                                                {formatTime(editTime)} → {(() => {
+                                                    const [h, m] = editTime.split(':').map(Number);
+                                                    const endMin = h * 60 + m + editSlotCount * intervalMinutes;
+                                                    const eh = Math.floor(endMin / 60);
+                                                    const em = endMin % 60;
+                                                    return formatTime(`${eh.toString().padStart(2,'0')}:${em.toString().padStart(2,'0')}`);
+                                                })()} · {editSlotCount * intervalMinutes} min
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

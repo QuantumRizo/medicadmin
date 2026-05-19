@@ -24,6 +24,7 @@ export type Database = {
           id: string
           patient_id: string | null
           reason: string
+          slot_count: number | null
           specific_service: string | null
           status: string | null
         }
@@ -36,6 +37,7 @@ export type Database = {
           id?: string
           patient_id?: string | null
           reason: string
+          slot_count?: number | null
           specific_service?: string | null
           status?: string | null
         }
@@ -48,6 +50,7 @@ export type Database = {
           id?: string
           patient_id?: string | null
           reason?: string
+          slot_count?: number | null
           specific_service?: string | null
           status?: string | null
         }

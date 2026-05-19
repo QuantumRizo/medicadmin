@@ -37,7 +37,7 @@ export const HospitalSettings = () => {
                     image: '',
                     startTime: editForm.startTime || '09:00',
                     endTime: editForm.endTime || '18:00',
-                    slotInterval: editForm.slotInterval || 30,
+                    slotInterval: editForm.slotInterval || 15,
                     isDentalClinic: editForm.isDentalClinic || false
                 });
                 toast.success('Sucursal agregada correctamente');
@@ -111,7 +111,7 @@ export const HospitalSettings = () => {
                         min="10"
                         max="120"
                         step="5"
-                        value={editForm.slotInterval || 30} 
+                        value={editForm.slotInterval || 15} 
                         onChange={e => setEditForm({...editForm, slotInterval: parseInt(e.target.value)})}
                         className="rounded-xl border-slate-200"
                     />
@@ -154,7 +154,7 @@ export const HospitalSettings = () => {
                     <p className="text-xs text-slate-500">Gestiona las ubicaciones y horarios de tus consultorios.</p>
                 </div>
                 {!isAdding && !isEditing && (
-                    <Button onClick={() => { setEditForm({ startTime: '09:00', endTime: '18:00', slotInterval: 30 }); setIsAdding(true); }} className="bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold shadow-lg shadow-sky-500/20">
+                    <Button onClick={() => { setEditForm({ startTime: '09:00', endTime: '18:00', slotInterval: 15 }); setIsAdding(true); }} className="bg-sky-500 hover:bg-sky-600 text-white rounded-xl font-bold shadow-lg shadow-sky-500/20">
                         <Plus className="w-4 h-4 mr-2" />
                         Nueva Sucursal
                     </Button>
