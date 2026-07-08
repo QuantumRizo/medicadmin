@@ -42,7 +42,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
     const [currentDate, setCurrentDate] = useState(getNow());
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
     const [selectedHospitalFilter, setSelectedHospitalFilter] = useState<string>('all');
-    const [view, setView] = useState<'month' | 'week'>('week');
+    const [view, setView] = useState<'month' | 'week'>('month');
     const [selectedDetailApt, setSelectedDetailApt] = useState<Appointment | null>(null);
     const [hoveredAptId, setHoveredAptId] = useState<string | null>(null);
 
