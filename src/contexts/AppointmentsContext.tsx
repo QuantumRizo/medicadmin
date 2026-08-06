@@ -298,6 +298,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             await supabase.from('appointments').delete().eq('patient_id', patientId);
             const { error: patientError } = await supabase.from('patients').delete().eq('id', patientId);
             if (patientError) throw patientError;
+            await fetchData();
         } catch (error) {
             console.error('Error deleting patient:', error);
             throw error;
@@ -484,6 +485,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 medicalHistory: newPatient.medical_history,
                 appId: newPatient.app_id
             };
+            await fetchData();
             return mappedNew;
         } catch (error) {
             console.error("Error adding patient:", error);
