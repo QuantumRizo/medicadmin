@@ -41,7 +41,7 @@ export const AdminDashboard = () => {
     const blockSlotOptions = [1, 2, 3, 4, 6, 8];
     const blockIntervalMinutes = hospitals.find(h => h.id === blockHospitalId)?.slotInterval || 15;
 
-    const [bookingPatientData, setBookingPatientData] = useState<{ name: string, email: string, phone: string, notes?: string } | null>(null);
+    const [bookingPatientData, setBookingPatientData] = useState<{ id?: string, name: string, email: string, phone: string, notes?: string } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const currentTab = searchParams.get('tab') || 'overview';
 
@@ -292,6 +292,7 @@ export const AdminDashboard = () => {
                 onExistingPatient={(patient) => {
                     setIsBookingTypeDialogOpen(false);
                     setBookingPatientData({
+                        id: patient.id,
                         name: patient.name,
                         email: patient.email,
                         phone: patient.phone,

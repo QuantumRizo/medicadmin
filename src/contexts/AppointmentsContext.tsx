@@ -154,28 +154,23 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             const safeName = patientData.name || 'Sin nombre';
             const safeEmail = patientData.email || null;
             
-            // Match by phone first (prioritizing 10-digit match), then email
-            const { data: results, error: searchError } = await supabase
-                .from('patients')
-                .select('id')
-                .eq('app_id', APP_ID)
-                .eq('phone', safePhone);
-            
-            if (searchError) throw searchError;
+            let patientId = patientData.id;
 
-            let existingPatient = results && results.length > 0 ? results[0] : null;
-
-            // If no phone match, try email
-            if (!existingPatient && safeEmail) {
-                const { data: emailResults } = await supabase
+            if (!patientId) {
+                // Match by phone AND exact name to prevent overwriting family members
+                const { data: results, error: searchError } = await supabase
                     .from('patients')
                     .select('id')
                     .eq('app_id', APP_ID)
-                    .eq('email', safeEmail);
-                if (emailResults && emailResults.length > 0) existingPatient = emailResults[0];
+                    .eq('phone', safePhone)
+                    .ilike('name', safeName);
+                
+                if (searchError) throw searchError;
+                if (results && results.length > 0) {
+                    patientId = results[0].id;
+                }
             }
 
-            let patientId = existingPatient?.id;
             if (patientId) {
                 await supabase.from('patients').update({
                     name: safeName,
@@ -449,12 +444,13 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         try {
             const safePhone = standardizePhone(patientData.phone);
             
-            // 1. Check if patient already exists by phone
+            // 1. Check if patient already exists by phone AND name to support family members sharing a phone
             const { data: results, error: searchError } = await supabase
                 .from('patients')
                 .select('*')
                 .eq('app_id', APP_ID)
-                .eq('phone', safePhone);
+                .eq('phone', safePhone)
+                .ilike('name', patientData.name);
             
             if (searchError) throw searchError;
 

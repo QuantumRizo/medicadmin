@@ -300,8 +300,22 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                 </div>
 
                 <div className="md:hidden space-y-4 px-4 pb-6">
+                    <div className="flex items-center gap-2 overflow-x-auto pb-2 pt-2 custom-scrollbar snap-x">
+                        {currentWeekDays.map(day => (
+                            <button
+                                key={day.toISOString()}
+                                onClick={() => setCurrentDate(day)}
+                                className={`flex flex-col items-center justify-center min-w-[50px] h-14 rounded-xl border transition-all snap-center ${isSameDay(day, currentDate) ? 'bg-[#1c334a] text-white border-[#1c334a] shadow-lg shadow-blue-900/20' : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'}`}
+                            >
+                                <span className="text-[10px] font-bold uppercase">{format(day, 'EEE', { locale: es })}</span>
+                                <span className="text-sm font-black">{format(day, 'd')}</span>
+                            </button>
+                        ))}
+                    </div>
                     <div className="flex items-center justify-between py-2 border-b border-slate-100">
-                        <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">Citas del día</span>
+                        <span className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                            {isToday(currentDate) ? 'Citas de hoy' : `Citas del ${format(currentDate, 'd MMM', { locale: es })}`}
+                        </span>
                         <Badge variant="outline" className="rounded-lg bg-sky-50 text-sky-700 border-none font-black">{getDayAppointments(currentDate).length}</Badge>
                     </div>
                     {getDayAppointments(currentDate).length === 0 ? (

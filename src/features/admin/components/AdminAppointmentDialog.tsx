@@ -18,7 +18,7 @@ interface AdminAppointmentDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     getAvailableSlots: (date: string, hospitalId: string) => string[];
-    initialPatientData?: { name: string, email: string, phone: string, notes?: string } | null;
+    initialPatientData?: { id?: string, name: string, email: string, phone: string, notes?: string } | null;
 }
 
 export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, getAvailableSlots, initialPatientData }: AdminAppointmentDialogProps) => {
@@ -47,6 +47,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
             // If we have initial data, we might want to auto-select hospital if provided, but for now just prefill data
             if (initialPatientData) {
                 setPatient({
+                    id: initialPatientData.id || undefined,
                     name: initialPatientData.name,
                     email: initialPatientData.email,
                     emailError: '',
@@ -56,6 +57,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
             } else {
                 // Reset to empty if no initial data
                 setPatient({
+                    id: undefined,
                     name: '',
                     email: '',
                     emailError: '',
@@ -67,7 +69,8 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
     }, [open, initialPatientData]);
 
     // Form State
-    const [patient, setPatient] = useState({
+    const [patient, setPatient] = useState<any>({
+        id: undefined,
         name: '',
         email: '',
         emailError: '',
@@ -88,7 +91,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
     const intervalMinutes = selectedHospitalForCalc?.slotInterval || 15;
 
     const handlePatientChange = (key: string, value: string) => {
-        setPatient(prev => ({ ...prev, [key]: value }));
+        setPatient((prev: any) => ({ ...prev, [key]: value }));
         
         if (key === 'phone') {
             const safe = standardizePhone(value);
@@ -136,7 +139,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
             );
             onOpenChange(false);
             // Reset form
-            setPatient({ name: '', email: '', emailError: '', phone: '', notes: '' });
+            setPatient({ id: undefined, name: '', email: '', emailError: '', phone: '', notes: '' });
             setAppointment({ serviceName: '', date: '', time: '', reason: '', slotCount: 2 });
             setBookingHospitalId(null);
         } catch (error: any) {
