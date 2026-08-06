@@ -303,13 +303,24 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                     >
                                         <option value="">Seleccionar hora...</option>
                                         {(appointment.date && bookingHospitalId) ? (
-                                            getAvailableSlots(appointment.date, bookingHospitalId).map(slot => (
-                                                <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                            ))
+                                            (() => {
+                                                const availableSlots = getAvailableSlots(appointment.date, bookingHospitalId);
+                                                if (availableSlots.length === 0) {
+                                                    return <option value="" disabled>No hay horarios disponibles para esta fecha</option>;
+                                                }
+                                                return availableSlots.map(slot => (
+                                                    <option key={slot} value={slot}>{formatTime(slot)}</option>
+                                                ));
+                                            })()
                                         ) : (
                                             <option disabled>Seleccione una fecha primero</option>
                                         )}
                                     </select>
+                                    {appointment.date && bookingHospitalId && getAvailableSlots(appointment.date, bookingHospitalId).length === 0 && (
+                                        <p className="text-xs text-amber-600 font-bold ml-1 animate-in fade-in">
+                                            ⚠️ No hay horarios libres para la fecha seleccionada. Por favor elige otro día.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
