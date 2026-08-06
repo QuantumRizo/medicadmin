@@ -45,6 +45,19 @@ export const AdminDashboard = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const currentTab = searchParams.get('tab') || 'overview';
 
+    useEffect(() => {
+        const handleCustomTabChange = (e: Event) => {
+            const customEvent = e as CustomEvent;
+            if (customEvent.detail) {
+                setSearchParams({ tab: customEvent.detail });
+            }
+        };
+        window.addEventListener('changeTab', handleCustomTabChange);
+        return () => {
+            window.removeEventListener('changeTab', handleCustomTabChange);
+        };
+    }, [setSearchParams]);
+
     const handleBlockSlot = async () => {
         if (!blockDate || !blockTime) return;
         setIsBlocking(true);
@@ -67,7 +80,7 @@ export const AdminDashboard = () => {
     };
 
     const NavItems = [
-        { id: 'overview', label: 'Tablero', icon: LayoutDashboard },
+        { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
         { id: 'prescriptions', label: 'Recetario', icon: LayoutDashboard },

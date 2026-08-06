@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
 import { formatTime } from '../../appointments/utils';
 import { useAuth } from '@/contexts/AuthContext';
-import { AlertCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { AlertCircle, ArrowRight, Sparkles, Bell, Settings } from 'lucide-react';
 import type { Appointment } from '../../appointments/types';
 
 interface AdminOverviewProps { }
@@ -97,6 +97,30 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                         </CardContent>
                     </Card>
                 )}
+
+                {/* Reminder Banner */}
+                <Card className="border border-sky-100 shadow-lg shadow-sky-500/5 bg-gradient-to-r from-sky-50 via-indigo-50/40 to-white overflow-hidden relative rounded-2xl transition-all">
+                    <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 relative z-10">
+                        <div className="w-12 h-12 rounded-2xl bg-sky-500/10 flex items-center justify-center shrink-0 border border-sky-200/60 text-sky-600 shadow-sm">
+                            <Bell className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1 text-center sm:text-left space-y-1">
+                            <h4 className="text-xs font-black text-sky-800 uppercase tracking-wider">
+                                Recordatorio
+                            </h4>
+                            <p className="text-slate-700 text-sm font-semibold leading-relaxed">
+                                Recuerda actualizar los datos de tus sedes y de tu perfil médico en <span className="font-extrabold text-[#0f172a]">Configuración</span>.
+                            </p>
+                        </div>
+                        <Button 
+                            onClick={() => window.dispatchEvent(new CustomEvent('changeTab', { detail: 'settings' }))}
+                            className="bg-[#0f172a] hover:bg-slate-800 text-white rounded-xl font-bold px-5 h-11 shadow-md shadow-slate-900/10 shrink-0 transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            <Settings className="w-4 h-4" />
+                            <span>Ir a Configuración</span>
+                        </Button>
+                    </CardContent>
+                </Card>
 
                 {/* KPI Grid - Stacked on very small, 2 cols on mobile, 4 on desktop */}
                 <div className="grid gap-4 grid-cols-1 xs:grid-cols-2 lg:grid-cols-4">

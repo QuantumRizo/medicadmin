@@ -20,7 +20,7 @@ export const AdminSidebar = ({
     setIsMobileMenuOpen
 }: AdminSidebarProps) => {
     const NavItems = [
-        { id: 'overview', label: 'Tablero', icon: LayoutDashboard },
+        { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
         { id: 'prescriptions', label: 'Recetario', icon: ClipboardList },

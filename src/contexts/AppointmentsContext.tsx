@@ -150,7 +150,9 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
     // Implementation of CRUD methods (copied and adapted from useAppointments.ts)
     const saveAppointment = async (appointmentData: Partial<Appointment>, patientData: Patient) => {
         try {
-            const safePhone = standardizePhone(patientData.phone);
+            const safePhone = standardizePhone(patientData.phone || '');
+            const safeName = patientData.name || 'Sin nombre';
+            const safeEmail = patientData.email || null;
             
             // Match by phone first (prioritizing 10-digit match), then email
             const { data: results, error: searchError } = await supabase
@@ -164,27 +166,27 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             let existingPatient = results && results.length > 0 ? results[0] : null;
 
             // If no phone match, try email
-            if (!existingPatient && patientData.email) {
+            if (!existingPatient && safeEmail) {
                 const { data: emailResults } = await supabase
                     .from('patients')
                     .select('id')
                     .eq('app_id', APP_ID)
-                    .eq('email', patientData.email);
+                    .eq('email', safeEmail);
                 if (emailResults && emailResults.length > 0) existingPatient = emailResults[0];
             }
 
             let patientId = existingPatient?.id;
             if (patientId) {
                 await supabase.from('patients').update({
-                    name: patientData.name,
-                    phone: patientData.phone,
-                    email: patientData.email || null
+                    name: safeName,
+                    phone: safePhone || patientData.phone,
+                    email: safeEmail
                 }).eq('id', patientId);
             } else {
                 const { data: newPatient, error: createError } = await supabase.from('patients').insert([{
-                    name: patientData.name,
-                    email: patientData.email || null,
-                    phone: patientData.phone,
+                    name: safeName,
+                    email: safeEmail,
+                    phone: safePhone || patientData.phone,
                     app_id: APP_ID
                 }]).select().single();
                 if (createError) throw createError;

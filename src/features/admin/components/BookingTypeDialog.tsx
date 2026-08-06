@@ -34,9 +34,9 @@ export const BookingTypeDialog = ({ open, onOpenChange, onNewPatient, onExisting
         if (!isSearching) return patients; // Show all patients when not searching
         const search = searchTerm.toLowerCase();
         return patients.filter(p =>
-            p.name.toLowerCase().includes(search) ||
-            p.email.toLowerCase().includes(search) ||
-            p.phone.includes(search)
+            (p.name || '').toLowerCase().includes(search) ||
+            (p.email || '').toLowerCase().includes(search) ||
+            (p.phone || '').includes(search)
         );
     }, [patients, searchTerm, isSearching]);
 

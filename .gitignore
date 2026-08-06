@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Environment variables — examples are safe to commit, values are not.
+.env
+.env.*
+!.env.example
+
+# Supabase CLI runtime state
+supabase/.temp/
+supabase/.branches/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
