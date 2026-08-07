@@ -8,7 +8,8 @@ import {
     ChevronRight,
     Plus,
     Clock,
-    XCircle
+    XCircle,
+    Eye
 } from 'lucide-react';
 import {
     format,
@@ -207,10 +208,11 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             
                                             {dayAppts.length > 2 && (
                                                 <button 
-                                                    className="absolute bottom-2 right-2 w-6 h-6 rounded-lg bg-[#1c334a] text-white text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg"
+                                                    className="absolute bottom-2 right-2 w-6 h-6 rounded-lg bg-[#1c334a] text-white text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg hover:bg-sky-600"
+                                                    title="Ver citas del día"
                                                     onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}
                                                 >
-                                                    <Plus className="w-3 h-3" />
+                                                    <Eye className="w-3 h-3" />
                                                 </button>
                                             )}
                                         </div>
