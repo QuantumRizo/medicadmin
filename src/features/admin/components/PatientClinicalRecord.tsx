@@ -19,7 +19,10 @@ import { PatientOdontogram } from './patient-record/PatientOdontogram';
 import { PatientClinicalNotes } from './patient-record/PatientClinicalNotes';
 import { PatientAppointments } from './patient-record/PatientAppointments';
 import { PatientPrintableRecord } from './patient-record/PatientPrintableRecord';
+import { GrowthTracker } from './patient-record/GrowthTracker';
+import { VaccinationRecord } from './patient-record/VaccinationRecord';
 import { printReport } from './patient-record/printRecordUtils';
+import { usePatientAge } from '../../appointments/hooks/usePatientAge';
 
 interface PatientClinicalRecordProps {
     patient: Patient;
@@ -76,6 +79,7 @@ export const PatientClinicalRecord = ({
         }
     });
     const [hasRestoredFromBackup, setHasRestoredFromBackup] = useState(false);
+    const { isMinor } = usePatientAge(history.dateOfBirth);
 
     const [initialHistoryStr, setInitialHistoryStr] = useState(() => normalizeForCompareStatic({
         ...DEFAULT_HISTORY,
@@ -386,6 +390,14 @@ export const PatientClinicalRecord = ({
                         onChange={handleHistoryChange} 
                     />
 
+                    {/* Somatometría — solo para menores de edad */}
+                    {isMinor && (
+                        <GrowthTracker
+                            history={history}
+                            onChange={handleHistoryChange}
+                        />
+                    )}
+
                     <Card className="shadow-sm">
                         <CardHeader className="bg-gray-50/50 pb-3 border-b">
                             <CardTitle className="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
@@ -454,6 +466,12 @@ export const PatientClinicalRecord = ({
                 history={history} 
                 hospitals={hospitals} 
                 onChange={handleHistoryChange} 
+            />
+
+            {/* ══ FULL-WIDTH: Vacunas (todos los pacientes) ══ */}
+            <VaccinationRecord
+                history={history}
+                onChange={handleHistoryChange}
             />
 
             {/* Notas de Evolución — sistema de sesiones (Opción A, NOM-024) */}

@@ -1,9 +1,11 @@
-import { Activity, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Activity, Clock, Baby, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import type { MedicalHistory } from '../../../appointments/types';
+import { usePatientAge } from '../../../appointments/hooks/usePatientAge';
 
 interface PatientMedicalHistoryProps {
     history: MedicalHistory;
@@ -11,8 +13,82 @@ interface PatientMedicalHistoryProps {
 }
 
 export const PatientMedicalHistory = ({ history, onChange }: PatientMedicalHistoryProps) => {
+    const { isMinor } = usePatientAge(history.dateOfBirth);
+    const [showPerinatal, setShowPerinatal] = useState(false);
+
     return (
         <div className="flex flex-col gap-6">
+
+            {/* Historia Perinatal — solo si es menor */}
+            {isMinor && (
+                <Card className="shadow-sm border-sky-100">
+                    <CardHeader className="pb-3 border-b bg-sky-50/40 cursor-pointer" onClick={() => setShowPerinatal(v => !v)}>
+                        <CardTitle className="text-sm font-bold text-sky-700 uppercase tracking-wider flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Baby className="w-4 h-4 text-sky-500" />
+                                Antecedentes Perinatales / Neonatales
+                            </div>
+                            {showPerinatal ? <ChevronUp className="w-4 h-4 text-sky-400" /> : <ChevronDown className="w-4 h-4 text-sky-400" />}
+                        </CardTitle>
+                    </CardHeader>
+                    {showPerinatal && (
+                        <CardContent className="pt-5 space-y-4 animate-in fade-in">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold text-gray-500 uppercase">Peso al Nacer (g)</Label>
+                                    <Input
+                                        placeholder="Ej. 3200"
+                                        className="h-9 text-sm bg-gray-50/50"
+                                        value={history.birthWeight || ''}
+                                        onChange={e => onChange('birthWeight', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold text-gray-500 uppercase">Semanas de Gestación</Label>
+                                    <Input
+                                        placeholder="Ej. 38"
+                                        className="h-9 text-sm bg-gray-50/50"
+                                        value={history.gestationalAge || ''}
+                                        onChange={e => onChange('gestationalAge', e.target.value)}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold text-gray-500 uppercase">Tipo de Parto</Label>
+                                    <select
+                                        className="flex h-9 w-full rounded-md border border-input bg-gray-50/50 px-3 py-1 text-sm text-gray-700"
+                                        value={history.deliveryType || ''}
+                                        onChange={e => onChange('deliveryType', e.target.value)}
+                                    >
+                                        <option value="">N/A</option>
+                                        <option value="Parto natural">Parto natural</option>
+                                        <option value="Cesárea">Cesárea</option>
+                                        <option value="Fórceps">Fórceps</option>
+                                    </select>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-xs font-semibold text-gray-500 uppercase">Apgar (1' / 5')</Label>
+                                    <Input
+                                        placeholder="Ej. 8/9"
+                                        className="h-9 text-sm bg-gray-50/50"
+                                        value={history.apgarScore || ''}
+                                        onChange={e => onChange('apgarScore', e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <Label className="text-xs font-semibold text-gray-500 uppercase">Complicaciones Neonatales</Label>
+                                <Textarea
+                                    className="min-h-[60px] resize-y text-sm bg-gray-50/30 font-medium"
+                                    placeholder="UCIN, ictericia, sepsis neonatal..."
+                                    value={history.neonatalComplications || ''}
+                                    onChange={e => onChange('neonatalComplications', e.target.value)}
+                                />
+                            </div>
+                        </CardContent>
+                    )}
+                </Card>
+            )}
+
             <Card className="shadow-sm border-t-4 border-t-[#1c334a]">
                 <CardHeader className="pb-3 border-b bg-white">
                     <CardTitle className="text-lg font-bold text-[#1c334a] uppercase tracking-wider flex items-center gap-2">
@@ -39,9 +115,17 @@ export const PatientMedicalHistory = ({ history, onChange }: PatientMedicalHisto
                                 <Label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Antecedentes No Patológicos</Label>
                                 <Textarea className="min-h-[60px] resize-y text-sm bg-gray-50/30 font-medium" placeholder="Hábitos, alimentación..." value={history.nonPathologicalHistory || ''} onChange={(e) => onChange('nonPathologicalHistory', e.target.value)} />
                             </div>
+                            {/* Label contextual: gineco-obstétricos para adulta, perinatales de la madre para menor */}
                             <div className="space-y-1">
-                                <Label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">Antecedentes Gineco-obstétricos</Label>
-                                <Textarea className="min-h-[60px] resize-y text-sm bg-gray-50/30 font-medium" placeholder="Menstruación, Partos, etc..." value={history.gynecoObstetricHistory || ''} onChange={(e) => onChange('gynecoObstetricHistory', e.target.value)} />
+                                <Label className="text-xs font-semibold text-gray-500 uppercase mb-1 block">
+                                    {isMinor ? 'Antecedentes Perinatales de la Madre' : 'Antecedentes Gineco-obstétricos'}
+                                </Label>
+                                <Textarea
+                                    className="min-h-[60px] resize-y text-sm bg-gray-50/30 font-medium"
+                                    placeholder={isMinor ? 'Embarazo, enfermedades maternas, medicamentos en gestación...' : 'Menstruación, Partos, etc...'}
+                                    value={history.gynecoObstetricHistory || ''}
+                                    onChange={(e) => onChange('gynecoObstetricHistory', e.target.value)}
+                                />
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-1">

@@ -21,6 +21,30 @@ export interface Service {
 }
 
 // ──────────────────────────────────────────────────────────────
+// Somatometría histórica — registro de peso/talla por consulta
+// ──────────────────────────────────────────────────────────────
+export interface GrowthRecord {
+    id: string;         // UUID
+    date: string;       // ISO date
+    weight?: string;    // kg
+    height?: string;    // cm
+    headCirc?: string;  // cm (perímetro cefálico)
+    notes?: string;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Vacunas — registro del esquema de vacunación
+// ──────────────────────────────────────────────────────────────
+export interface Vaccination {
+    id: string;
+    vaccine: string;    // Nombre del biológico
+    date: string;       // Fecha de aplicación
+    dose?: string;      // 1ª dosis, 2ª dosis, Refuerzo...
+    lot?: string;       // Número de lote
+    appliedBy?: string; // Médico/enfermera que aplicó
+}
+
+// ──────────────────────────────────────────────────────────────
 // NOM-024: Sesión clínica — una entrada del cuaderno de notas.
 // Las sesiones finalizadas son inmutables (cumplimiento NOM-024).
 // ──────────────────────────────────────────────────────────────
@@ -55,6 +79,24 @@ export interface MedicalHistory {
     insuranceCompany?: string;
     sports?: string;
     recommendedBy?: string;
+
+    // ── Tutor / Responsable Legal (se activa automáticamente en menores de edad) ──
+    guardianName?: string;
+    guardianPhone?: string;
+    guardianRelation?: string; // 'Madre' | 'Padre' | 'Abuelo/a' | 'Tutor Legal' | 'Otro'
+
+    // ── Historia Perinatal / Neonatal ──
+    birthWeight?: string;           // Peso al nacer (g)
+    gestationalAge?: string;        // Semanas de gestación
+    deliveryType?: string;          // 'Parto natural' | 'Cesárea' | 'Fórceps'
+    apgarScore?: string;            // Puntuación Apgar
+    neonatalComplications?: string; // Complicaciones neonatales (texto libre)
+
+    // ── Somatometría histórica (series de tiempo por consulta) ──
+    growthRecords?: GrowthRecord[];
+
+    // ── Esquema de vacunación ──
+    vaccinations?: Vaccination[];
 
     bloodType?: string;
     allergies: string;

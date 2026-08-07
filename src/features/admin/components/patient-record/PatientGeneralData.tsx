@@ -1,8 +1,9 @@
-import { User } from 'lucide-react';
+import { User, UserRound } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import type { MedicalHistory } from '../../../appointments/types';
+import { usePatientAge } from '../../../appointments/hooks/usePatientAge';
 
 interface PatientGeneralDataProps {
     history: MedicalHistory;
@@ -10,6 +11,8 @@ interface PatientGeneralDataProps {
 }
 
 export const PatientGeneralData = ({ history, onChange }: PatientGeneralDataProps) => {
+    const { isMinor } = usePatientAge(history.dateOfBirth);
+
     return (
         <Card className="shadow-sm">
             <CardHeader className="bg-gray-50/50 pb-3 border-b">
@@ -19,10 +22,55 @@ export const PatientGeneralData = ({ history, onChange }: PatientGeneralDataProp
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-4 space-y-4">
+
+                {/* Tutor / Responsable Legal — solo visible si es menor */}
+                {isMinor && (
+                    <div className="space-y-3 bg-sky-50/60 border border-sky-100 rounded-xl p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                            <UserRound className="w-3.5 h-3.5 text-sky-600" />
+                            <span className="text-xs font-bold text-sky-700 uppercase tracking-wider">Tutor / Responsable</span>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-gray-500 uppercase font-semibold">Nombre del Tutor</Label>
+                            <Input
+                                placeholder="Nombre completo"
+                                className="h-8 text-sm bg-white"
+                                value={history.guardianName || ''}
+                                onChange={(e) => onChange('guardianName', e.target.value)}
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-gray-500 uppercase font-semibold">Relación</Label>
+                            <select
+                                className="flex h-8 w-full rounded-md border border-input bg-white px-3 py-1 text-sm text-gray-700"
+                                value={history.guardianRelation || ''}
+                                onChange={(e) => onChange('guardianRelation', e.target.value)}
+                            >
+                                <option value="">N/A</option>
+                                <option value="Madre">Madre</option>
+                                <option value="Padre">Padre</option>
+                                <option value="Abuelo/a">Abuelo/a</option>
+                                <option value="Tutor Legal">Tutor Legal</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-gray-500 uppercase font-semibold">Teléfono del Tutor</Label>
+                            <Input
+                                placeholder="55 1234 5678"
+                                className="h-8 text-sm bg-white"
+                                value={history.guardianPhone || ''}
+                                onChange={(e) => onChange('guardianPhone', e.target.value)}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 <div className="space-y-1">
                     <Label className="text-xs text-gray-500 uppercase font-semibold">F. Nacimiento</Label>
                     <Input type="date" className="h-8 text-sm bg-gray-50/50" value={history.dateOfBirth || ''} onChange={(e) => onChange('dateOfBirth', e.target.value)} />
                 </div>
+
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                         <Label className="text-xs text-gray-500 uppercase font-semibold">Sangre</Label>
@@ -43,21 +91,35 @@ export const PatientGeneralData = ({ history, onChange }: PatientGeneralDataProp
                         </select>
                     </div>
                 </div>
+
+                {/* Estado civil: solo visible en adultos */}
+                {!isMinor && (
+                    <div className="space-y-1">
+                        <Label className="text-xs text-gray-500 uppercase font-semibold">Estado Civil</Label>
+                        <select className="flex h-8 w-full rounded-md border border-input bg-gray-50/50 px-3 py-1 text-sm text-gray-700" value={history.maritalStatus || ''} onChange={(e) => onChange('maritalStatus', e.target.value)}>
+                            <option value="">N/A</option>
+                            <option value="Soltero">Soltero</option>
+                            <option value="Casado">Casado</option>
+                            <option value="Divorciado">Divorciado</option>
+                            <option value="Viudo">Viudo</option>
+                            <option value="Unión Libre">Unión Libre</option>
+                        </select>
+                    </div>
+                )}
+
                 <div className="space-y-1">
-                    <Label className="text-xs text-gray-500 uppercase font-semibold">Estado Civil</Label>
-                    <select className="flex h-8 w-full rounded-md border border-input bg-gray-50/50 px-3 py-1 text-sm text-gray-700" value={history.maritalStatus || ''} onChange={(e) => onChange('maritalStatus', e.target.value)}>
-                        <option value="">N/A</option>
-                        <option value="Soltero">Soltero</option>
-                        <option value="Casado">Casado</option>
-                        <option value="Divorciado">Divorciado</option>
-                        <option value="Viudo">Viudo</option>
-                        <option value="Unión Libre">Unión Libre</option>
-                    </select>
+                    {/* Label contextual: Ocupación para adultos, Escuela para menores */}
+                    <Label className="text-xs text-gray-500 uppercase font-semibold">
+                        {isMinor ? 'Escuela / Grado' : 'Ocupación'}
+                    </Label>
+                    <Input
+                        placeholder={isMinor ? 'Ej. 3° de primaria' : 'Ej. Arquitecto'}
+                        className="h-8 text-sm bg-gray-50/50"
+                        value={history.occupation || ''}
+                        onChange={(e) => onChange('occupation', e.target.value)}
+                    />
                 </div>
-                <div className="space-y-1">
-                    <Label className="text-xs text-gray-500 uppercase font-semibold">Ocupación</Label>
-                    <Input placeholder="Ej. Arquitecto" className="h-8 text-sm bg-gray-50/50" value={history.occupation || ''} onChange={(e) => onChange('occupation', e.target.value)} />
-                </div>
+
                 <div className="space-y-1">
                     <Label className="text-xs text-gray-500 uppercase font-semibold">CURP <span className="text-gray-300 normal-case">(opcional)</span></Label>
                     <Input
@@ -68,17 +130,22 @@ export const PatientGeneralData = ({ history, onChange }: PatientGeneralDataProp
                         onChange={(e) => onChange('curp', e.target.value.toUpperCase())}
                     />
                 </div>
+
                 <div className="space-y-1">
                     <Label className="text-xs text-gray-500 uppercase font-semibold">Deportes</Label>
                     <Input placeholder="Ej. Natación" className="h-8 text-sm bg-gray-50/50" value={history.sports || ''} onChange={(e) => onChange('sports', e.target.value)} />
                 </div>
+
                 <div className="pt-2 border-t">
-                    <Label className="text-xs text-gray-500 uppercase mb-2 block font-semibold">Teléfonos Extra</Label>
+                    <Label className="text-xs text-gray-500 uppercase mb-2 block font-semibold">
+                        {isMinor ? 'Tel. Tutor / Casa' : 'Teléfonos Extra'}
+                    </Label>
                     <div className="grid grid-cols-2 gap-3">
                         <Input placeholder="Casa" className="h-8 text-sm bg-gray-50/50" value={history.homePhone || ''} onChange={(e) => onChange('homePhone', e.target.value)} />
                         <Input placeholder="Oficina" className="h-8 text-sm bg-gray-50/50" value={history.officePhone || ''} onChange={(e) => onChange('officePhone', e.target.value)} />
                     </div>
                 </div>
+
                 <div className="pt-2 border-t text-sm">
                     <Label className="text-xs text-gray-500 uppercase mb-2 block font-semibold">Seguro Médico</Label>
                     <div className="flex items-center gap-2 mb-2">

@@ -41,6 +41,8 @@ export const RecetarioPage = () => {
     const [patientName, setPatientName] = useState('');
     const [patientAge, setPatientAge] = useState('');
     const [patientSex, setPatientSex] = useState('');
+    const [patientWeight, setPatientWeight] = useState('');
+    const [patientGuardian, setPatientGuardian] = useState('');
     const [date, setDate] = useState(() => getTodayStr());
     
     const [diagnosis, setDiagnosis] = useState('');
@@ -153,6 +155,18 @@ export const RecetarioPage = () => {
 
                         <div>
                             <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1.5">
+                                Peso (kg)
+                            </label>
+                            <Input
+                                className="bg-white rounded-lg"
+                                placeholder="Ej. 24"
+                                value={patientWeight}
+                                onChange={e => setPatientWeight(e.target.value)}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1.5">
                                 Sexo
                             </label>
                             <select
@@ -164,6 +178,18 @@ export const RecetarioPage = () => {
                                 <option value="Femenino">Femenino</option>
                                 <option value="Masculino">Masculino</option>
                             </select>
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide block mb-1.5">
+                                Tutor / Responsable <span className="text-gray-300 normal-case font-normal">(si aplica)</span>
+                            </label>
+                            <Input
+                                className="bg-white rounded-lg"
+                                placeholder="Ej. María García (Madre)"
+                                value={patientGuardian}
+                                onChange={e => setPatientGuardian(e.target.value)}
+                            />
                         </div>
 
                     </CardContent>
@@ -281,8 +307,14 @@ export const RecetarioPage = () => {
                         <p className="text-lg font-bold text-gray-900 mt-0.5">
                             {patientName || <span className="text-gray-300 italic font-normal text-base">Nombre del paciente</span>}
                         </p>
-                        <div className="flex gap-4 mt-1">
+                        {patientGuardian && (
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                <span className="font-semibold text-gray-400">A cargo de:</span> {patientGuardian}
+                            </p>
+                        )}
+                        <div className="flex flex-wrap gap-4 mt-1">
                             {patientAge && <p className="text-sm text-gray-500"><span className="font-medium text-gray-400">Edad:</span> {patientAge}</p>}
+                            {patientWeight && <p className="text-sm text-gray-500"><span className="font-medium text-gray-400">Peso:</span> {patientWeight} kg</p>}
                             {patientSex && <p className="text-sm text-gray-500"><span className="font-medium text-gray-400">Sexo:</span> {patientSex}</p>}
                         </div>
                     </div>
