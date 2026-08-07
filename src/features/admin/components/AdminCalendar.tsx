@@ -158,7 +158,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                     </div>
                                 ))}
                             </div>
-                            <div className="grid grid-cols-7 auto-rows-[120px]">
+                            <div className="grid grid-cols-7 auto-rows-[145px]">
                                 {calendarDays.map((day, idx) => {
                                     const dayAppts = getDayAppointments(day);
                                     const isCurrentMonth = isSameMonth(day, monthStart);
@@ -191,7 +191,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                             </div>
 
                                             <div className="flex flex-col gap-0.5 overflow-hidden flex-1">
-                                                {(dayAppts.length > 3 ? dayAppts.slice(0, 2) : dayAppts).map(apt => {
+                                                {(dayAppts.length > 4 ? dayAppts.slice(0, 3) : dayAppts).map(apt => {
                                                     const patient = patients.find(p => p.id === apt.patientId);
                                                     const hospitalIndex = hospitals.findIndex(h => h.id === apt.hospitalId);
                                                     const color = getApptColor(apt.reason, apt.status, hospitalIndex);
@@ -209,13 +209,13 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                     );
                                                 })}
 
-                                                {dayAppts.length > 3 && (
+                                                {dayAppts.length > 4 && (
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}
                                                         className="mt-0.5 text-[10px] font-extrabold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200/60 px-2 py-1 rounded-md transition-all flex items-center justify-between shadow-xs w-full text-left cursor-pointer"
                                                         title="Ver todas las citas del día"
                                                     >
-                                                        <span>+{dayAppts.length - 2} más</span>
+                                                        <span>+{dayAppts.length - 3} más</span>
                                                         <Eye className="w-3 h-3 text-sky-500 shrink-0" />
                                                     </button>
                                                 )}
