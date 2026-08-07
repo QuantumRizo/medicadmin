@@ -179,10 +179,19 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                 `}>
                                                     {format(day, 'd')}
                                                 </span>
+                                                {dayAppts.length > 0 && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}
+                                                        className="text-[10px] font-extrabold text-slate-500 bg-slate-100 hover:bg-slate-200/80 px-2 py-0.5 rounded-full transition-colors cursor-pointer flex items-center gap-1"
+                                                        title="Ver resumen del día"
+                                                    >
+                                                        <span>{dayAppts.length} {dayAppts.length === 1 ? 'cita' : 'citas'}</span>
+                                                    </button>
+                                                )}
                                             </div>
 
-                                            <div className="flex flex-col gap-0.5 overflow-hidden flex-1 pb-6">
-                                                {dayAppts.slice(0, 4).map(apt => {
+                                            <div className="flex flex-col gap-0.5 overflow-hidden flex-1">
+                                                {(dayAppts.length > 3 ? dayAppts.slice(0, 2) : dayAppts).map(apt => {
                                                     const patient = patients.find(p => p.id === apt.patientId);
                                                     const hospitalIndex = hospitals.findIndex(h => h.id === apt.hospitalId);
                                                     const color = getApptColor(apt.reason, apt.status, hospitalIndex);
@@ -199,22 +208,18 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                         </div>
                                                     );
                                                 })}
-                                                {dayAppts.length > 4 && (
-                                                    <div className="text-[10px] text-slate-500 font-bold pl-1 pt-0.5 cursor-pointer hover:underline" onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}>
-                                                        +{dayAppts.length - 4} más
-                                                    </div>
+
+                                                {dayAppts.length > 3 && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}
+                                                        className="mt-0.5 text-[10px] font-extrabold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200/60 px-2 py-1 rounded-md transition-all flex items-center justify-between shadow-xs w-full text-left cursor-pointer"
+                                                        title="Ver todas las citas del día"
+                                                    >
+                                                        <span>+{dayAppts.length - 2} más</span>
+                                                        <Eye className="w-3 h-3 text-sky-500 shrink-0" />
+                                                    </button>
                                                 )}
                                             </div>
-                                            
-                                            {dayAppts.length > 2 && (
-                                                <button 
-                                                    className="absolute bottom-2 right-2 w-6 h-6 rounded-lg bg-[#1c334a] text-white text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center shadow-lg hover:bg-sky-600"
-                                                    title="Ver citas del día"
-                                                    onClick={(e) => { e.stopPropagation(); setSelectedDay(day); }}
-                                                >
-                                                    <Eye className="w-3 h-3" />
-                                                </button>
-                                            )}
                                         </div>
                                     );
                                 })}
