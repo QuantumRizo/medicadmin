@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Save, User, Award, FileText, Loader2, Building2 } from 'lucide-react';
+import { Save, User, Award, FileText, Loader2, Building2, Lock, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +19,38 @@ export const ClinicSettingsPage = () => {
     const [activeTab, setActiveTab] = useState<string>(() => {
         return localStorage.getItem('clinic_settings_tab') || 'profile';
     });
+
+    // Password change state
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [savingPassword, setSavingPassword] = useState(false);
+
+    const handlePasswordChange = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newPassword.length < 6) {
+            toast.error('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            toast.error('Las contraseñas no coinciden');
+            return;
+        }
+        setSavingPassword(true);
+        try {
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) throw error;
+            toast.success('Contraseña actualizada correctamente');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : 'Error al cambiar la contraseña';
+            toast.error(msg);
+        } finally {
+            setSavingPassword(false);
+        }
+    };
     const [profile, setProfile] = useState<DoctorProfile>({
         appId: appId || '',
         doctorName: '',
@@ -105,14 +137,18 @@ export const ClinicSettingsPage = () => {
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); localStorage.setItem('clinic_settings_tab', v); }} className="space-y-6">
-                <TabsList className="bg-slate-100 p-1 rounded-2xl w-full sm:w-auto h-auto grid grid-cols-2">
-                    <TabsTrigger value="profile" className="rounded-xl py-3 px-8 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
+                <TabsList className="bg-slate-100 p-1 rounded-2xl w-full sm:w-auto h-auto grid grid-cols-3">
+                    <TabsTrigger value="profile" className="rounded-xl py-3 px-6 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
                         <User className="w-4 h-4 mr-2" />
                         Perfil Médico
                     </TabsTrigger>
-                    <TabsTrigger value="hospitals" className="rounded-xl py-3 px-8 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
+                    <TabsTrigger value="hospitals" className="rounded-xl py-3 px-6 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
                         <Building2 className="w-4 h-4 mr-2" />
                         Sucursales
+                    </TabsTrigger>
+                    <TabsTrigger value="security" className="rounded-xl py-3 px-6 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
+                        <Lock className="w-4 h-4 mr-2" />
+                        Seguridad
                     </TabsTrigger>
                 </TabsList>
 
@@ -187,6 +223,110 @@ export const ClinicSettingsPage = () => {
 
                 <TabsContent value="hospitals" className="animate-in fade-in duration-300">
                     <HospitalSettings />
+                </TabsContent>
+
+                <TabsContent value="security" className="animate-in fade-in duration-300">
+                    <div className="max-w-lg">
+                        <Card className="shadow-xl shadow-slate-200/50 border-none rounded-3xl overflow-hidden bg-white">
+                            <CardHeader className="pb-4 border-b border-slate-50 bg-slate-50/30">
+                                <CardTitle className="text-sm font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <ShieldCheck className="w-4 h-4 text-[#1c334a]" />
+                                    Cambiar Contraseña
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                <form onSubmit={handlePasswordChange} className="space-y-5">
+                                    {/* Nueva contraseña */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
+                                            Nueva Contraseña
+                                        </label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <Input
+                                                type={showNew ? 'text' : 'password'}
+                                                placeholder="••••••••"
+                                                value={newPassword}
+                                                onChange={e => setNewPassword(e.target.value)}
+                                                required
+                                                minLength={6}
+                                                className="h-12 pl-11 pr-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all shadow-sm w-full"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowNew(v => !v)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                tabIndex={-1}
+                                            >
+                                                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 ml-1 italic">Mínimo 6 caracteres.</p>
+                                    </div>
+
+                                    {/* Confirmar contraseña */}
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
+                                            Confirmar Contraseña
+                                        </label>
+                                        <div className="relative">
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <Input
+                                                type={showConfirm ? 'text' : 'password'}
+                                                placeholder="••••••••"
+                                                value={confirmPassword}
+                                                onChange={e => setConfirmPassword(e.target.value)}
+                                                required
+                                                minLength={6}
+                                                className={`h-12 pl-11 pr-12 rounded-xl bg-slate-50 border-slate-200 focus:bg-white transition-all shadow-sm w-full ${
+                                                    confirmPassword && confirmPassword !== newPassword
+                                                        ? 'border-red-300 focus:border-red-400'
+                                                        : confirmPassword && confirmPassword === newPassword
+                                                        ? 'border-green-300 focus:border-green-400'
+                                                        : ''
+                                                }`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowConfirm(v => !v)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                                                tabIndex={-1}
+                                            >
+                                                {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                        {confirmPassword && confirmPassword !== newPassword && (
+                                            <p className="text-[10px] text-red-500 ml-1 font-medium">Las contraseñas no coinciden.</p>
+                                        )}
+                                        {confirmPassword && confirmPassword === newPassword && (
+                                            <p className="text-[10px] text-green-500 ml-1 font-medium">Las contraseñas coinciden ✓</p>
+                                        )}
+                                    </div>
+
+                                    <Button
+                                        type="submit"
+                                        disabled={savingPassword || !newPassword || !confirmPassword}
+                                        className="w-full h-12 bg-[#1c334a] hover:bg-[#152537] text-white font-semibold rounded-xl flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 shadow-lg shadow-slate-200 mt-2"
+                                    >
+                                        {savingPassword
+                                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Actualizando...</>
+                                            : <><ShieldCheck className="w-4 h-4" /> Actualizar Contraseña</>
+                                        }
+                                    </Button>
+                                </form>
+                            </CardContent>
+                        </Card>
+
+                        <div className="flex items-start gap-4 bg-amber-50 border border-amber-100 rounded-3xl p-5 text-amber-800 shadow-sm mt-6">
+                            <Lock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="font-bold text-sm">Recomendación de Seguridad</p>
+                                <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                                    Usa una contraseña única que no uses en otros servicios. Combina letras, números y símbolos para mayor protección.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
                 </TabsContent>
             </Tabs>
 
