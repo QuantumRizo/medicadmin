@@ -42,7 +42,7 @@ function formatBytes(bytes: number): string {
 function MiniBar({ value, max, color }: { value: number; max: number; color: string }) {
     const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0;
     return (
-        <div className="w-full h-1.5 bg-[#1c334a]/10 rounded-full overflow-hidden mt-1">
+        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1">
             <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
         </div>
     );
@@ -120,10 +120,10 @@ export const SuperAdminContent = () => {
             {/* KPIs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                    { label: 'Doctores', value: totalDoctors, icon: Users, color: 'text-sky-600', bg: 'bg-sky-50' },
-                    { label: 'Plan Pro', value: proCount, icon: Crown, color: 'text-amber-600', bg: 'bg-amber-50' },
-                    { label: 'Plan Free', value: freeCount, icon: Shield, color: 'text-slate-600', bg: 'bg-slate-100' },
-                    { label: 'Citas este mes', value: totalAppts, icon: Calendar, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                    { label: 'Doctores', value: totalDoctors, icon: Users, color: 'text-[#1c334a]', bg: 'bg-[#1c334a]/10' },
+                    { label: 'Plan Pro', value: proCount, icon: Crown, color: 'text-[#1c334a]', bg: 'bg-[#1c334a]/10' },
+                    { label: 'Plan Free', value: freeCount, icon: Shield, color: 'text-slate-500', bg: 'bg-slate-100' },
+                    { label: 'Citas este mes', value: totalAppts, icon: Calendar, color: 'text-[#1c334a]', bg: 'bg-[#1c334a]/10' },
                 ].map(kpi => (
                     <div key={kpi.label} className="bg-white border border-slate-100 shadow-sm rounded-3xl p-6 space-y-3">
                         <div className={`w-10 h-10 rounded-2xl ${kpi.bg} flex items-center justify-center`}>
@@ -138,21 +138,21 @@ export const SuperAdminContent = () => {
             </div>
 
             {/* Banner WhatsApp global */}
-            <div className="bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border border-emerald-200/60 rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-sm">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-200">
-                    <MessageCircle className="w-6 h-6" />
+            <div className="bg-gradient-to-r from-[#1c334a]/10 to-[#1c334a]/5 border border-[#1c334a]/15 rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-[#1c334a] text-white flex items-center justify-center shrink-0 shadow-md">
+                    <MessageCircle className="w-6 h-6 text-white" />
                 </div>
                 <div className="flex-1">
-                    <div className="flex justify-between items-center text-sm font-black text-slate-800 mb-1">
+                    <div className="flex justify-between items-center text-sm font-black text-[#1c334a] mb-1">
                         <span>WhatsApp enviados este mes (total global)</span>
-                        <span className="text-emerald-600 text-lg">{totalWA} msgs</span>
+                        <span className="text-[#1c334a] text-lg font-black">{totalWA} msgs</span>
                     </div>
                     <p className="text-xs text-slate-500 font-medium">
-                        Sumatoria de todas las clínicas · {doctors.filter(d => d.whatsapp_enabled).length} de {totalDoctors} doctores tienen los recordatorios automáticos activos.
+                        Sumatoria de todas las clínicas · {doctors.filter(d => d.whatsapp_enabled).length} de {totalDoctors} doctores tienen recordatorios activos.
                     </p>
                 </div>
-                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-emerald-100 shadow-sm">
-                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                <div className="flex items-center gap-2 bg-white px-4 py-2 rounded-2xl border border-slate-200 shadow-sm">
+                    <TrendingUp className="w-4 h-4 text-[#1c334a]" />
                     <span className="text-xs font-bold text-slate-700">{Math.round(totalWA / Math.max(1, totalDoctors))} prom/doctor</span>
                 </div>
             </div>
@@ -164,7 +164,7 @@ export const SuperAdminContent = () => {
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         placeholder="Buscar por nombre de doctor, correo o ID..."
-                        className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 shadow-sm transition-all font-medium"
+                        className="w-full bg-white border border-slate-200 rounded-2xl px-5 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#1c334a] focus:ring-2 focus:ring-[#1c334a]/10 shadow-sm transition-all font-medium"
                     />
                 </div>
                 <div className="flex items-center gap-3 justify-end">
@@ -250,10 +250,10 @@ export const SuperAdminContent = () => {
                                     <div className="lg:col-span-1 flex lg:justify-center">
                                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
                                             isPro
-                                                ? 'bg-amber-50 border-amber-200 text-amber-700'
+                                                ? 'bg-[#1c334a] text-white border-[#1c334a]'
                                                 : 'bg-slate-100 border-slate-200 text-slate-600'
                                         }`}>
-                                            {isPro ? <Crown className="w-3 h-3 text-amber-500" /> : <Shield className="w-3 h-3 text-slate-400" />}
+                                            {isPro ? <Crown className="w-3 h-3 text-amber-300" /> : <Shield className="w-3 h-3 text-slate-400" />}
                                             {doc.plan_name}
                                         </span>
                                     </div>
@@ -261,8 +261,8 @@ export const SuperAdminContent = () => {
                                     {/* Estado Trial */}
                                     <div className="lg:col-span-2 lg:text-center">
                                         {isPro ? (
-                                            <div className="flex items-center gap-1.5 text-emerald-600 text-xs font-bold lg:justify-center">
-                                                <CheckCircle2 className="w-4 h-4" /> Activo (Pro)
+                                            <div className="flex items-center gap-1.5 text-[#1c334a] text-xs font-black lg:justify-center">
+                                                <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Activo (Pro)
                                             </div>
                                         ) : trialExpired ? (
                                             <div className="flex items-center gap-1.5 text-red-500 text-xs font-bold lg:justify-center">
@@ -284,7 +284,7 @@ export const SuperAdminContent = () => {
                                     <div className="lg:col-span-2">
                                         <div className="flex items-center justify-between lg:justify-center gap-2">
                                             <span className="text-xs text-slate-400 lg:hidden font-medium">Citas este mes:</span>
-                                            <span className="text-xl font-black text-slate-800">{doc.appointments_month}</span>
+                                            <span className="text-xl font-black text-[#1c334a]">{doc.appointments_month}</span>
                                         </div>
                                     </div>
 
@@ -294,7 +294,7 @@ export const SuperAdminContent = () => {
                                             <span className="text-xs text-slate-400 lg:hidden font-medium">WhatsApp:</span>
                                             <div className="flex items-center gap-1.5">
                                                 {doc.whatsapp_enabled
-                                                    ? <ToggleRight className="w-4 h-4 text-emerald-500" />
+                                                    ? <ToggleRight className="w-4 h-4 text-[#1c334a]" />
                                                     : <ToggleLeft className="w-4 h-4 text-slate-300" />
                                                 }
                                                 <span className="text-xs font-bold text-slate-700">{doc.whatsapp_sent} / {doc.whatsapp_limit}</span>
@@ -303,7 +303,7 @@ export const SuperAdminContent = () => {
                                         <MiniBar
                                             value={doc.whatsapp_sent}
                                             max={doc.whatsapp_limit}
-                                            color={waUsedPct >= 90 ? 'bg-red-500' : waUsedPct >= 70 ? 'bg-amber-400' : 'bg-emerald-500'}
+                                            color={waUsedPct >= 90 ? 'bg-red-500' : waUsedPct >= 70 ? 'bg-amber-400' : 'bg-[#1c334a]'}
                                         />
                                     </div>
 
@@ -321,7 +321,7 @@ export const SuperAdminContent = () => {
                                             <MiniBar
                                                 value={storagePct}
                                                 max={100}
-                                                color={storagePct >= 90 ? 'bg-red-500' : storagePct >= 70 ? 'bg-amber-400' : 'bg-sky-500'}
+                                                color={storagePct >= 90 ? 'bg-red-500' : storagePct >= 70 ? 'bg-amber-400' : 'bg-[#1c334a]'}
                                             />
                                         )}
                                     </div>
@@ -329,18 +329,18 @@ export const SuperAdminContent = () => {
                                     {/* Botón de Acción */}
                                     <div className="lg:col-span-1 flex lg:justify-center">
                                         {isUpdating ? (
-                                            <Loader2 className="w-5 h-5 animate-spin text-sky-500" />
+                                            <Loader2 className="w-5 h-5 animate-spin text-[#1c334a]" />
                                         ) : isPro ? (
                                             <button
                                                 onClick={() => handleSetPlan(doc.app_id, 'Free')}
-                                                className="text-[11px] font-black px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 hover:border-slate-300 transition-all active:scale-95 shadow-sm"
+                                                className="text-[11px] font-black px-3.5 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-100 transition-all active:scale-95 shadow-sm"
                                             >
                                                 Bajar a Free
                                             </button>
                                         ) : (
                                             <button
                                                 onClick={() => handleSetPlan(doc.app_id, 'Pro')}
-                                                className="text-[11px] font-black px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 text-white hover:from-amber-600 hover:to-yellow-600 shadow-md shadow-amber-200 transition-all active:scale-95"
+                                                className="text-[11px] font-black px-3.5 py-2 rounded-xl bg-[#1c334a] hover:bg-[#0f172a] text-white shadow-md shadow-slate-200 transition-all active:scale-95"
                                             >
                                                 Subir a Pro ✦
                                             </button>
@@ -371,12 +371,12 @@ export default function SuperAdminPage() {
         <div className="min-h-screen bg-slate-50 text-slate-800 font-sans">
             <header className="sticky top-0 z-50 bg-[#0f172a] text-white px-6 py-4 flex items-center justify-between shadow-md">
                 <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 bg-sky-500 rounded-xl flex items-center justify-center">
+                    <div className="w-9 h-9 bg-[#1c334a] rounded-xl flex items-center justify-center">
                         <Stethoscope className="w-5 h-5 text-white" />
                     </div>
                     <div>
                         <span className="font-black tracking-tight text-white text-lg">MedicAdmin</span>
-                        <span className="ml-2 text-[10px] bg-amber-400/20 text-amber-300 border border-amber-400/30 rounded-full px-2 py-0.5 font-black uppercase tracking-wider">
+                        <span className="ml-2 text-[10px] bg-[#1c334a] text-white border border-white/20 rounded-full px-2 py-0.5 font-black uppercase tracking-wider">
                             Super Admin
                         </span>
                     </div>
