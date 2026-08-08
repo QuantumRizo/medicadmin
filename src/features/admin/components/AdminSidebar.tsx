@@ -22,7 +22,10 @@ export const AdminSidebar = ({
     isMobileMenuOpen,
     setIsMobileMenuOpen
 }: AdminSidebarProps) => {
+    const { isSuperAdmin } = useAuth();
+
     const NavItems = [
+        ...(isSuperAdmin ? [{ id: 'superadmin', label: 'Super Admin (Doctores)', icon: Crown }] : []),
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
@@ -30,7 +33,6 @@ export const AdminSidebar = ({
         { id: 'subscription', label: 'Suscripción', icon: CreditCard },
     ];
 
-    const { isSuperAdmin } = useAuth();
 
 
     return (
