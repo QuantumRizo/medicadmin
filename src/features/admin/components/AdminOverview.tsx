@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { AppointmentDetailDialog } from './AppointmentDetailDialog';
 import { formatTime } from '../../appointments/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, isDefaultDoctorName } from '@/contexts/AuthContext';
 import { AlertCircle, ArrowRight, Sparkles, Bell, Settings } from 'lucide-react';
 import type { Appointment } from '../../appointments/types';
 
@@ -66,7 +66,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
         appointments.map(a => a.patientId)
     ).size;
 
-    const isNewUser = fullName === 'Nuevo Doctor' || hospitals.some(h => h.name === 'Consultorio Principal');
+    const isNewUser = isDefaultDoctorName(fullName) || hospitals.some(h => h.name === 'Consultorio Principal');
 
     return (
         <>

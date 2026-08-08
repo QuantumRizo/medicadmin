@@ -14,12 +14,13 @@ import SuperAdminPage from "./pages/SuperAdmin";
 
 const queryClient = new QueryClient();
 
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth, isDefaultDoctorName } from "./contexts/AuthContext";
 import { AppointmentsProvider } from "./contexts/AppointmentsContext";
+import { DoctorOnboardingPortal } from "./features/admin/components/DoctorOnboardingPortal";
 
 // Protected Route Component
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading, appId } = useAuth();
+  const { user, loading, appId, fullName } = useAuth();
 
   if (loading) {
     return (
@@ -35,7 +36,11 @@ const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
+
+  if (isDefaultDoctorName(fullName)) {
+    return <DoctorOnboardingPortal />;
+  }
+
   // Extra security: if we have a user but NO appId after loading, something is wrong
   if (!appId) {
     return (

@@ -8,6 +8,12 @@ import type { User } from '@supabase/supabase-js';
 // El dueño del sistema cambia manualmente profiles para subir a Pro.
 // ─────────────────────────────────────────────────────────────
 
+export const isDefaultDoctorName = (name: string | null | undefined): boolean => {
+    if (!name) return true;
+    const clean = name.trim().toLowerCase();
+    return clean === '' || clean === 'nuevo doctor' || clean === 'nuevo doctor/a' || clean === 'doctor' || clean === 'nuevo_doctor';
+};
+
 interface AuthContextType {
     user: User | null;
     appId: string | null;
@@ -31,6 +37,7 @@ interface AuthContextType {
     /** true solo para el dueño del sistema */
     isSuperAdmin: boolean;
     loading: boolean;
+    refreshProfile: () => Promise<void>;
     signOut: () => Promise<void>;
 }
 
@@ -116,6 +123,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
     };
 
+    const refreshProfile = async () => {
+        if (user?.id) {
+            await fetchProfile(user.id);
+        }
+    };
+
     const signOut = async () => {
         await supabase.auth.signOut();
     };
@@ -137,6 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             storageLimitMb: isPro ? null : (storageLimitMb ?? 100),
             isSuperAdmin,
             loading,
+            refreshProfile,
             signOut,
         }}>
             {children}
