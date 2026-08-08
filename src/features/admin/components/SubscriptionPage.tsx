@@ -169,10 +169,11 @@ export const SubscriptionPage = () => {
                             <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Plan Pro</p>
                             <div className="flex items-end gap-1">
                                 <span className="text-2xl font-bold text-slate-400 mb-1.5">$</span>
-                                <span className="text-5xl font-black text-[#1c334a]">600</span>
-                                <span className="text-slate-400 font-bold mb-1.5">MXN / mes</span>
+                                <span className="text-5xl font-black text-[#1c334a]">699</span>
+                                <span className="text-slate-400 font-bold mb-1.5">+ IVA / mes</span>
                             </div>
-                            <p className="text-xs text-slate-400 font-medium">$696 con IVA. Sin contratos, cancela cuando quieras.</p>
+                            <p className="text-xs text-slate-400 font-medium">$810.84 MXN con IVA. Sin contratos, cancela cuando quieras.</p>
+
                         </div>
                     </div>
                     <CardContent className="p-8">
