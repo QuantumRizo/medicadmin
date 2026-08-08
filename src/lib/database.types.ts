@@ -286,6 +286,7 @@ export type Database = {
       profiles: {
         Row: {
           app_id: string
+          email: string | null
           full_name: string
           id: string
           /** 'Free' | 'Pro' */
@@ -300,6 +301,7 @@ export type Database = {
         }
         Insert: {
           app_id: string
+          email?: string | null
           full_name: string
           id: string
           plan_name?: string | null
@@ -312,6 +314,7 @@ export type Database = {
         }
         Update: {
           app_id?: string
+          email?: string | null
           full_name?: string
           id?: string
           plan_name?: string | null
