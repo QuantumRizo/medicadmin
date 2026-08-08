@@ -12,11 +12,13 @@ import { AddPatientDialog } from './AddPatientDialog';
 import { AdminAppointmentDialog } from './AdminAppointmentDialog';
 import { BookingTypeDialog } from './BookingTypeDialog';
 import { AdminLayout } from './AdminLayout';
+import { ClinicSettingsPage } from './ClinicSettingsPage';
 import { RecetarioPage } from './RecetarioPage';
 import { SubscriptionPage } from './SubscriptionPage';
 import { SuperAdminContent } from '@/pages/SuperAdmin';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams } from 'react-router-dom';
+
 
 export const AdminDashboard = () => {
     const { hospitals, blockSlot, saveAppointment, addPatient, getAvailableSlots, patients } = useAppointments();

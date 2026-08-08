@@ -2,7 +2,7 @@ import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, 
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from './GlobalSearch';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+
 
 
 interface AdminSidebarProps {
@@ -31,7 +31,7 @@ export const AdminSidebar = ({
     ];
 
     const { isSuperAdmin } = useAuth();
-    const navigate = useNavigate();
+
 
     return (
         <aside className={`print:hidden fixed inset-y-0 left-0 z-50 w-64 bg-[#0f172a] text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
