@@ -106,9 +106,10 @@ export const AdminDashboard = () => {
         <AdminLayout
             currentTab={currentTab}
             onTabChange={(val) => setSearchParams({ tab: val })}
-            title={NavItems.find(i => i.id === currentTab)?.label || 'Panel'}
-            headerActions={
+            title={isSuperAdmin ? 'Gestión de Doctores' : (NavItems.find(i => i.id === currentTab)?.label || 'Panel')}
+            headerActions={isSuperAdmin ? null : (
                 <>
+
                     <Dialog open={isBlockDialogOpen} onOpenChange={setIsBlockDialogOpen}>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="flex-1 md:flex-none border-slate-200 text-slate-700 hover:bg-slate-50 rounded-2xl h-12 px-6 shadow-sm font-semibold transition-all active:scale-95">
@@ -239,7 +240,7 @@ export const AdminDashboard = () => {
                         <span>Nuevo Paciente</span>
                     </Button>
                 </>
-            }
+            )}
         >
             {/* Tabs Content */}
             <Tabs value={currentTab} onValueChange={(val) => setSearchParams({ tab: val })} className="w-full">
