@@ -288,31 +288,63 @@ export type Database = {
           app_id: string
           full_name: string
           id: string
+          /** 'Free' | 'Pro' */
           plan_name: string | null
-          subscription_ends_at: string | null
+          /** 'trial' = Plan Free  |  'active' = Plan Pro */
           subscription_status: string | null
           trial_ends_at: string | null
           updated_at: string
+          whatsapp_reminders_enabled: boolean | null
+          whatsapp_limit: number | null
+          whatsapp_extra_credits: number | null
         }
         Insert: {
           app_id: string
           full_name: string
           id: string
           plan_name?: string | null
-          subscription_ends_at?: string | null
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          whatsapp_reminders_enabled?: boolean | null
+          whatsapp_limit?: number | null
+          whatsapp_extra_credits?: number | null
         }
         Update: {
           app_id?: string
           full_name?: string
           id?: string
           plan_name?: string | null
-          subscription_ends_at?: string | null
           subscription_status?: string | null
           trial_ends_at?: string | null
           updated_at?: string
+          whatsapp_reminders_enabled?: boolean | null
+          whatsapp_limit?: number | null
+          whatsapp_extra_credits?: number | null
+        }
+        Relationships: []
+      }
+      whatsapp_usage: {
+        Row: {
+          id: string
+          app_id: string
+          year_month: string
+          messages_sent: number
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          app_id: string
+          year_month: string
+          messages_sent?: number
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          app_id?: string
+          year_month?: string
+          messages_sent?: number
+          updated_at?: string | null
         }
         Relationships: []
       }

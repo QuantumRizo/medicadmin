@@ -1,6 +1,9 @@
-import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X, Settings, ClipboardList, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Calendar as CalendarIcon, Users, Stethoscope, LogOut, X, Settings, ClipboardList, CreditCard, Crown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from './GlobalSearch';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
 
 interface AdminSidebarProps {
     currentTab?: string;
@@ -26,6 +29,9 @@ export const AdminSidebar = ({
         { id: 'prescriptions', label: 'Recetario', icon: ClipboardList },
         { id: 'subscription', label: 'Suscripción', icon: CreditCard },
     ];
+
+    const { isSuperAdmin } = useAuth();
+    const navigate = useNavigate();
 
     return (
         <aside className={`print:hidden fixed inset-y-0 left-0 z-50 w-64 bg-[#0f172a] text-slate-300 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -62,8 +68,8 @@ export const AdminSidebar = ({
                         </button>
                     ))}
 
-                    {/* Divider + Configuración */}
-                    <div className="pt-2 border-t border-white/5">
+                    {/* Divider + Configuración + SuperAdmin */}
+                    <div className="pt-2 border-t border-white/5 space-y-2">
                         <button
                             onClick={() => { onTabChange('settings'); setIsMobileMenuOpen(false); }}
                             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
@@ -75,8 +81,19 @@ export const AdminSidebar = ({
                             <Settings className={`w-5 h-5 ${currentTab === 'settings' ? 'text-white' : 'text-slate-400'}`} />
                             Configuración
                         </button>
+
+                        {isSuperAdmin && (
+                            <button
+                                onClick={() => { navigate('/superadmin'); setIsMobileMenuOpen(false); }}
+                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30 transition-all"
+                            >
+                                <Crown className="w-5 h-5 text-amber-400" />
+                                Super Admin
+                            </button>
+                        )}
                     </div>
                 </nav>
+
 
                 {/* Footer Session */}
                 <div className="mt-auto pt-6 border-t border-white/5">

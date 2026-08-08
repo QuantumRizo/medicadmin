@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Save, User, Award, FileText, Loader2, Building2, Lock, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { Save, User, Award, FileText, Loader2, Building2, Lock, ShieldCheck, Eye, EyeOff, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { HospitalSettings } from './HospitalSettings';
+import { WhatsAppSettings } from './WhatsAppSettings';
 import type { DoctorProfile } from '@/features/appointments/types';
 
 const DEFAULT_AVISO = `Con fundamento en los artículos 15 y 16 de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, hacemos de su conocimiento que los datos personales y sensibles recabados (nombre, datos de contacto, historial clínico) serán utilizados exclusivamente para la prestación de servicios médicos, seguimiento de su salud y administración de citas. Sus datos son resguardados con medidas de seguridad conforme a la NOM-024-SSA3-2012. Usted tiene derecho de Acceso, Rectificación, Cancelación y Oposición (ARCO) sobre sus datos.`;
@@ -137,7 +138,7 @@ export const ClinicSettingsPage = () => {
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); localStorage.setItem('clinic_settings_tab', v); }} className="space-y-6">
-                <TabsList className="bg-slate-100 p-1 rounded-2xl w-full sm:w-auto h-auto grid grid-cols-3">
+                <TabsList className="bg-slate-100 p-1 rounded-2xl w-full sm:w-auto h-auto grid grid-cols-4">
                     <TabsTrigger value="profile" className="rounded-xl py-3 px-6 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
                         <User className="w-4 h-4 mr-2" />
                         Perfil Médico
@@ -149,6 +150,10 @@ export const ClinicSettingsPage = () => {
                     <TabsTrigger value="security" className="rounded-xl py-3 px-6 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
                         <Lock className="w-4 h-4 mr-2" />
                         Seguridad
+                    </TabsTrigger>
+                    <TabsTrigger value="whatsapp" className="rounded-xl py-3 px-6 data-[state=active]:bg-white data-[state=active]:shadow-lg data-[state=active]:text-[#1c334a] font-bold transition-all">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        WhatsApp
                     </TabsTrigger>
                 </TabsList>
 
@@ -223,6 +228,10 @@ export const ClinicSettingsPage = () => {
 
                 <TabsContent value="hospitals" className="animate-in fade-in duration-300">
                     <HospitalSettings />
+                </TabsContent>
+
+                <TabsContent value="whatsapp" className="animate-in fade-in duration-300">
+                    <WhatsAppSettings />
                 </TabsContent>
 
                 <TabsContent value="security" className="animate-in fade-in duration-300">

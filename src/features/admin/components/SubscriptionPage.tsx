@@ -1,203 +1,223 @@
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, CreditCard, Sparkles, AlertTriangle, Calendar, ExternalLink, ShieldCheck } from 'lucide-react';
-import { format, differenceInDays, parseISO } from 'date-fns';
+import {
+    Check, Sparkles, ShieldCheck, MessageCircle,
+    Calendar, Clock, Star, ArrowRight, HardDrive
+} from 'lucide-react';
+
+import { differenceInDays, parseISO, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { getNow } from '@/lib/dateUtils';
+
+const FREE_FEATURES = [
+    { icon: Calendar,       text: 'Agenda médica multi-sucursal' },
+    { icon: ShieldCheck,    text: 'Expediente clínico digital ilimitado' },
+    { icon: Star,           text: 'Recetario profesional con firma' },
+    { icon: ShieldCheck,    text: 'Cumplimiento NOM-024-SSA3-2012' },
+    { icon: MessageCircle,  text: '30 recordatorios WhatsApp / mes' },
+    { icon: HardDrive,      text: 'Archivos: 5 MB / archivo · 100 MB total' },
+];
+
+const PRO_FEATURES = [
+    { icon: Calendar,       text: 'Agenda médica multi-sucursal' },
+    { icon: ShieldCheck,    text: 'Expediente clínico digital ilimitado' },
+    { icon: Star,           text: 'Recetario profesional con firma' },
+    { icon: ShieldCheck,    text: 'Cumplimiento NOM-024-SSA3-2012' },
+    { icon: MessageCircle,  text: '300 recordatorios WhatsApp / mes' },
+    { icon: HardDrive,      text: 'Archivos: 25 MB / archivo · Almacenamiento ilimitado' },
+    { icon: ShieldCheck,    text: 'Soporte técnico prioritario' },
+];
 
 export const SubscriptionPage = () => {
     const { subscriptionStatus, planName, trialEndsAt } = useAuth();
 
-    // Calculate days remaining if trial
-    const daysRemaining = trialEndsAt 
-        ? differenceInDays(parseISO(trialEndsAt), getNow()) 
+    const isPro = subscriptionStatus === 'active';
+    const isFree = !isPro;
+
+    const daysRemaining = trialEndsAt
+        ? Math.max(0, differenceInDays(parseISO(trialEndsAt), getNow()))
         : 0;
 
-    const isTrial = subscriptionStatus === 'trial';
-    const isActive = subscriptionStatus === 'active';
+    const trialPercent = trialEndsAt
+        ? Math.max(0, Math.min(100, Math.round((daysRemaining / 30) * 100)))
+        : 0;
 
-    const features = [
-        "Agenda Médica Multi-sucursal",
-        "Expediente Clínico Digital Ilimitado",
-        "Recetario Profesional con Firma",
-        "Subida de Archivos y Estudios (Premium)",
-        "Odontograma Interactivo (Modo Dental)",
-        "Soporte Técnico Prioritario",
-        "Cumplimiento NOM-024-SSA3-2012"
-    ];
+    const trialColor = daysRemaining > 10
+        ? 'bg-sky-500'
+        : daysRemaining > 3
+            ? 'bg-amber-400'
+            : 'bg-red-500';
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-in fade-in duration-500">
-            {/* Account Status Hero */}
+
+            {/* Hero — Estado actual */}
             <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0f172a] text-white p-8 md:p-12 shadow-2xl">
                 <div className="absolute top-0 right-0 p-12 opacity-10 pointer-events-none">
                     <Sparkles className="w-48 h-48" />
                 </div>
-                
-                <div className="relative z-10 grid md:grid-cols-2 gap-8 items-center">
-                    <div className="space-y-4">
-                        <Badge className={`${
-                            isActive ? 'bg-green-500' : isTrial ? 'bg-sky-500' : 'bg-red-500'
-                        } text-white border-none py-1 px-4 rounded-full font-bold uppercase tracking-widest text-[10px]`}>
-                            Estado: {isActive ? 'Cuenta Activa' : isTrial ? 'Periodo de Prueba' : 'Suscripción Vencida'}
+                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
+                    <div className="space-y-3">
+                        <Badge className={`${isPro ? 'bg-emerald-500' : 'bg-sky-500'} text-white border-none py-1.5 px-4 rounded-full font-black uppercase tracking-widest text-[10px]`}>
+                            {isPro ? '✦ Plan Pro — Activo' : '⌛ Plan Free — Período de Prueba'}
                         </Badge>
-                        <h2 className="text-4xl md:text-5xl font-black tracking-tight leading-tight">
-                            {isActive ? 'Tu Plan Premium está activo' : 'Potencia tu Clínica con Premium'}
+                        <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
+                            {isPro
+                                ? '¡Bienvenido al Plan Pro!'
+                                : 'Tu mes de prueba gratuita'}
                         </h2>
-                        <p className="text-slate-400 text-lg font-medium max-w-md">
-                            Gestión integral, seguridad de datos y cumplimiento normativo en una sola plataforma.
+                        <p className="text-slate-400 font-medium max-w-md">
+                            {isPro
+                                ? 'Tienes acceso completo a todas las herramientas de MedicAdmin.'
+                                : 'Explora todas las funciones. Cuando termine tu prueba, elige el Plan Pro para seguir sin interrupciones.'}
                         </p>
                     </div>
 
-                    <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 space-y-6">
+                    {/* Panel de estado */}
+                    <div className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 space-y-4 w-full md:w-72 shrink-0">
                         <div className="flex items-center justify-between">
                             <span className="text-slate-400 font-bold uppercase tracking-wider text-xs">Plan Actual</span>
-                            <span className="text-sky-400 font-black">{planName}</span>
+                            <span className={`font-black text-sm ${isPro ? 'text-emerald-400' : 'text-sky-400'}`}>{planName}</span>
                         </div>
-                        
-                        {isTrial && (
-                            <div className="space-y-2">
+
+                        {isFree && trialEndsAt && (
+                            <div className="space-y-2.5">
                                 <div className="flex justify-between text-sm font-bold">
-                                    <span>Prueba gratuita</span>
-                                    <span className="text-sky-300">{daysRemaining} días restantes</span>
+                                    <span className="flex items-center gap-1.5 text-slate-300">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        Días restantes
+                                    </span>
+                                    <span className={daysRemaining <= 3 ? 'text-red-400' : 'text-sky-300'}>
+                                        {daysRemaining} días
+                                    </span>
                                 </div>
-                                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-sky-500 transition-all duration-1000" 
-                                        style={{ width: `${(daysRemaining / 30) * 100}%` }}
+                                <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden">
+                                    <div
+                                        className={`h-full rounded-full transition-all duration-1000 ${trialColor}`}
+                                        style={{ width: `${trialPercent}%` }}
                                     />
                                 </div>
-                                <p className="text-[10px] text-slate-500 text-center italic">
-                                    Vence el {trialEndsAt ? format(parseISO(trialEndsAt), "d 'de' MMMM, yyyy", { locale: es }) : '-'}
+                                <p className="text-[10px] text-slate-500 text-center font-medium">
+                                    Vence el {format(parseISO(trialEndsAt), "d 'de' MMMM, yyyy", { locale: es })}
                                 </p>
                             </div>
                         )}
 
-                        {isActive && (
-                            <div className="flex items-center gap-3 p-3 bg-green-500/10 rounded-2xl border border-green-500/20 text-green-400">
+                        {isPro && (
+                            <div className="flex items-center gap-3 p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-emerald-400">
                                 <ShieldCheck className="w-5 h-5 shrink-0" />
-                                <span className="text-xs font-bold uppercase tracking-wider">Tu cuenta cumple con todos los requisitos premium.</span>
+                                <span className="text-xs font-bold">Acceso completo activo</span>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {!isActive ? (
-                <div className="grid md:grid-cols-3 gap-8">
-                    {/* Pricing Card */}
-                    <Card className="md:col-span-1 rounded-[2rem] border-none shadow-xl shadow-slate-200 overflow-hidden bg-white flex flex-col">
-                        <div className="p-8 bg-slate-50 border-b border-slate-100 text-center space-y-2">
-                            <span className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Suscripción Mensual</span>
-                            <div className="flex items-center justify-center gap-1">
-                                <span className="text-2xl font-bold text-slate-400 mt-2">$</span>
-                                <span className="text-6xl font-black text-[#1c334a]">600</span>
-                                <span className="text-lg font-bold text-slate-400 mt-4">+ IVA</span>
-                            </div>
-                            <p className="text-xs text-slate-500 font-medium">Total: $696.00 MXN al mes</p>
+            {/* Comparativa de planes */}
+            <div className="grid md:grid-cols-2 gap-6">
+
+                {/* Tarjeta Plan Free */}
+                <div className={`relative rounded-[2rem] overflow-hidden border-2 transition-all ${isFree ? 'border-sky-400 shadow-xl shadow-sky-100' : 'border-slate-100 shadow-lg shadow-slate-100 opacity-70'} bg-white`}>
+                    {isFree && (
+                        <div className="absolute top-4 right-4">
+                            <Badge className="bg-sky-100 text-sky-700 border-none font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full">
+                                Tu plan actual
+                            </Badge>
                         </div>
-                        
-                        <CardContent className="p-8 flex-1 space-y-6">
-                            <div className="space-y-4">
-                                <p className="text-sm font-black text-[#1c334a] uppercase tracking-wider">Incluye:</p>
-                                <ul className="space-y-3">
-                                    {features.map((f, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-sm font-medium text-slate-600 leading-tight">
-                                            <div className="mt-1 bg-green-100 p-0.5 rounded-full text-green-600 shrink-0">
-                                                <Check className="w-3 h-3" />
-                                            </div>
-                                            {f}
-                                        </li>
-                                    ))}
-                                </ul>
+                    )}
+                    <div className="p-8 border-b border-slate-50 bg-slate-50/50">
+                        <div className="space-y-1 mb-4">
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Plan Free</p>
+                            <div className="flex items-end gap-1">
+                                <span className="text-5xl font-black text-[#1c334a]">$0</span>
+                                <span className="text-slate-400 font-bold mb-1.5">/ 30 días</span>
                             </div>
-
-                            <div className="pt-4">
-                                <Button 
-                                    className="w-full h-14 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl font-black shadow-lg shadow-sky-200 transition-all active:scale-95 group"
-                                    onClick={() => window.open('https://buy.stripe.com/test_dR63ee7v3dE806s9AA', '_blank')} // Placeholder link
-                                >
-                                    <CreditCard className="w-5 h-5 mr-2" />
-                                    Activar suscripción
-                                    <ExternalLink className="w-4 h-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </Button>
-                                <p className="text-[10px] text-slate-400 text-center mt-4 px-4 leading-relaxed font-medium">
-                                    Al pagar, recibirás una confirmación por correo. Tu cuenta se activará automáticamente tras la validación del pago.
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Info Cards */}
-                    <div className="md:col-span-2 space-y-6">
-                        <div className="grid sm:grid-cols-2 gap-6">
-                            <Card className="rounded-3xl border-none shadow-lg shadow-slate-100 bg-white p-6 space-y-4 group hover:shadow-xl transition-all">
-                                <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <ShieldCheck className="w-6 h-6" />
-                                </div>
-                                <h4 className="font-black text-[#1c334a]">Seguridad Bancaria</h4>
-                                <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                                    Procesamos todos nuestros pagos a través de Stripe, líder mundial en seguridad de pagos. Tus datos bancarios nunca tocan nuestros servidores.
-                                </p>
-                            </Card>
-
-                            <Card className="rounded-3xl border-none shadow-lg shadow-slate-100 bg-white p-6 space-y-4 group hover:shadow-xl transition-all">
-                                <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                    <AlertTriangle className="w-6 h-6" />
-                                </div>
-                                <h4 className="font-black text-[#1c334a]">Facturación Automática</h4>
-                                <p className="text-sm text-slate-500 font-medium leading-relaxed">
-                                    Si requieres factura XML/PDF, podrás solicitarla directamente al finalizar tu pago en Stripe o contactar con nuestro equipo para el seguimiento.
-                                </p>
-                            </Card>
+                            <p className="text-xs text-slate-400 font-medium">Un mes de prueba gratuita, sin tarjeta.</p>
                         </div>
-
-                        <Card className="rounded-3xl border-none shadow-lg shadow-slate-100 bg-white overflow-hidden">
-                            <CardHeader className="bg-slate-50/50 p-6 border-b border-slate-100">
-                                <CardTitle className="text-lg font-black text-[#1c334a] flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-sky-500" /> Historial de Pagos
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <div className="flex flex-col items-center justify-center py-16 text-slate-300">
-                                    <CreditCard className="w-12 h-12 mb-4 opacity-20" />
-                                    <p className="text-sm font-bold">Aún no hay transacciones registradas.</p>
-                                    <p className="text-[11px] font-medium">Tus próximos pagos aparecerán listados aquí.</p>
-                                </div>
-                            </CardContent>
-                        </Card>
                     </div>
-                </div>
-            ) : (
-                <div className="flex justify-center">
-                    <Card className="max-w-2xl w-full rounded-[2.5rem] border-none shadow-xl shadow-slate-200 bg-white p-8 md:p-12 space-y-8 text-center md:text-left">
-                        <div className="flex flex-col md:flex-row items-center gap-8">
-                            <div className="w-20 h-20 rounded-3xl bg-green-50 text-green-500 flex items-center justify-center shrink-0">
-                                <Sparkles className="w-10 h-10" />
-                            </div>
-                            <div className="space-y-2">
-                                <h3 className="text-3xl font-black text-[#1c334a]">¡Gracias por tu confianza!</h3>
-                                <p className="text-slate-500 text-lg font-medium">
-                                    Tu plan <span className="text-sky-500 font-bold uppercase">{planName}</span> está activo y tienes acceso completo a todas las herramientas premium de MedicAdmin.
-                                </p>
-                            </div>
-                        </div>
-                        
-                        <div className="grid sm:grid-cols-2 gap-4 pt-4 border-t border-slate-50">
-                            {features.map((f, i) => (
-                                <div key={i} className="flex items-start gap-3 text-sm font-bold text-slate-600">
-                                    <div className="mt-1 bg-green-100 p-0.5 rounded-full text-green-600 shrink-0">
-                                        <Check className="w-3 h-3" />
+                    <CardContent className="p-8">
+                        <ul className="space-y-3.5">
+                            {FREE_FEATURES.map((f, i) => (
+                                <li key={i} className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                                    <div className="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center shrink-0">
+                                        <Check className="w-3 h-3 text-sky-600" />
                                     </div>
-                                    {f}
-                                </div>
+                                    {f.text}
+                                </li>
                             ))}
-                        </div>
-                    </Card>
+                        </ul>
+                    </CardContent>
                 </div>
-            )}
+
+                {/* Tarjeta Plan Pro */}
+                <div className={`relative rounded-[2rem] overflow-hidden border-2 transition-all ${isPro ? 'border-emerald-400 shadow-xl shadow-emerald-100' : 'border-[#1c334a] shadow-xl shadow-slate-200'} bg-white`}>
+                    {/* Recomendado badge */}
+                    {!isPro && (
+                        <div className="absolute top-0 left-0 right-0 bg-[#1c334a] text-white text-center py-2 text-[10px] font-black uppercase tracking-widest">
+                            ✦ Recomendado
+                        </div>
+                    )}
+                    {isPro && (
+                        <div className="absolute top-4 right-4">
+                            <Badge className="bg-emerald-100 text-emerald-700 border-none font-black text-[10px] uppercase tracking-wider px-3 py-1 rounded-full">
+                                Tu plan actual
+                            </Badge>
+                        </div>
+                    )}
+                    <div className={`p-8 border-b border-slate-50 bg-[#0f172a]/[0.02] ${!isPro ? 'pt-14' : ''}`}>
+                        <div className="space-y-1 mb-4">
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Plan Pro</p>
+                            <div className="flex items-end gap-1">
+                                <span className="text-2xl font-bold text-slate-400 mb-1.5">$</span>
+                                <span className="text-5xl font-black text-[#1c334a]">600</span>
+                                <span className="text-slate-400 font-bold mb-1.5">MXN / mes</span>
+                            </div>
+                            <p className="text-xs text-slate-400 font-medium">$696 con IVA. Sin contratos, cancela cuando quieras.</p>
+                        </div>
+                    </div>
+                    <CardContent className="p-8">
+                        <ul className="space-y-3.5">
+                            {PRO_FEATURES.map((f, i) => (
+                                <li key={i} className="flex items-center gap-3 text-sm font-medium text-slate-600">
+                                    <div className="w-5 h-5 rounded-full bg-[#1c334a]/10 flex items-center justify-center shrink-0">
+                                        <Check className="w-3 h-3 text-[#1c334a]" />
+                                    </div>
+                                    {f.text}
+                                </li>
+                            ))}
+                        </ul>
+
+                        {!isPro && (
+                            <div className="mt-8 p-4 bg-[#0f172a]/5 rounded-2xl border border-[#1c334a]/10">
+                                <div className="flex items-start gap-3">
+                                    <ArrowRight className="w-4 h-4 text-[#1c334a] shrink-0 mt-0.5" />
+                                    <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                                        Para activar el Plan Pro, contáctanos directamente. Tu cuenta se actualiza de inmediato una vez confirmado el pago.
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {isPro && (
+                            <div className="mt-8 flex items-center gap-3 p-4 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-700">
+                                <ShieldCheck className="w-5 h-5 shrink-0" />
+                                <p className="text-xs font-bold">Tienes acceso completo al Plan Pro.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </div>
+            </div>
+
+            {/* Nota de seguridad / pie */}
+            <Card className="border-none shadow-sm bg-slate-50 rounded-3xl">
+                <CardContent className="p-6 flex items-start gap-4">
+                    <ShieldCheck className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                        MedicAdmin cumple con la <strong>NOM-024-SSA3-2012</strong> y la Ley Federal de Protección de Datos Personales. Todos los datos clínicos están cifrados y almacenados en servidores seguros en la nube. Tu información y la de tus pacientes nunca se comparte con terceros.
+                    </p>
+                </CardContent>
+            </Card>
         </div>
     );
 };

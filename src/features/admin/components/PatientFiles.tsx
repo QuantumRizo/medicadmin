@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from 'sonner';
-import { FileText, Upload, Trash2, Loader2, ExternalLink, Lock, Sparkles } from 'lucide-react';
+import { FileText, Upload, Trash2, Loader2, ExternalLink, HardDrive, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -18,27 +18,45 @@ interface PatientFile {
     file_type: string;
     description: string;
     created_at: string;
+    file_size_bytes: number;
 }
 
 interface PatientFilesProps {
     patientId: string;
 }
 
+// Formatea bytes en formato legible
+function formatBytes(bytes: number): string {
+    if (bytes === 0) return '0 B';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export const PatientFiles = ({ patientId }: PatientFilesProps) => {
-    const { canUploadFiles } = useAuth();
+    const { maxFileSizeMb, storageLimitMb, appId } = useAuth();
     const [files, setFiles] = useState<PatientFile[]>([]);
+    const [totalUsedBytes, setTotalUsedBytes] = useState<number>(0);
+    const [allFilesBytes, setAllFilesBytes] = useState<number>(0); // total del app_id
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [description, setDescription] = useState('');
-
-    // Delete Confirmation State
     const [fileToDelete, setFileToDelete] = useState<PatientFile | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    const maxFileSizeBytes = maxFileSizeMb * 1024 * 1024;
+    const storageLimitBytes = storageLimitMb ? storageLimitMb * 1024 * 1024 : null;
+    const storageUsedPercent = storageLimitBytes
+        ? Math.min(100, Math.round((allFilesBytes / storageLimitBytes) * 100))
+        : 0;
+    const storageNearLimit = storageLimitBytes && allFilesBytes >= storageLimitBytes * 0.9;
+    const storageFull = storageLimitBytes && allFilesBytes >= storageLimitBytes;
+
     useEffect(() => {
         fetchFiles();
-    }, [patientId]);
+        if (storageLimitBytes) fetchTotalStorage();
+    }, [patientId, appId]);
 
     const fetchFiles = async () => {
         try {
@@ -50,19 +68,51 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            setFiles(data || []);
-        } catch (error) {
-            console.error('Error fetching files:', error);
+            const filesData = data || [];
+            setFiles(filesData);
+            setTotalUsedBytes(filesData.reduce((sum, f) => sum + (f.file_size_bytes || 0), 0));
+        } catch {
             toast.error("Error al cargar archivos");
         } finally {
             setLoading(false);
         }
     };
 
+    // Calcula el total de almacenamiento usado por TODOS los pacientes del app_id
+    const fetchTotalStorage = async () => {
+        const { data } = await supabase
+            .from('patient_uploads')
+            .select('file_size_bytes, patients!inner(app_id)')
+            .eq('patients.app_id', appId);
+
+        const total = (data || []).reduce((sum: number, f: any) => sum + (f.file_size_bytes || 0), 0);
+        setAllFilesBytes(total);
+    };
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setSelectedFile(e.target.files[0]);
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validar tamaño por archivo
+        if (file.size > maxFileSizeBytes) {
+            toast.error(`El archivo excede el límite de ${maxFileSizeMb} MB por archivo`, {
+                description: `Tu archivo pesa ${formatBytes(file.size)}. El máximo permitido en tu plan es ${maxFileSizeMb} MB.`,
+            });
+            e.target.value = '';
+            return;
         }
+
+        // Validar si cabe en el almacenamiento total
+        if (storageLimitBytes && (allFilesBytes + file.size) > storageLimitBytes) {
+            const remaining = Math.max(0, storageLimitBytes - allFilesBytes);
+            toast.error('Límite de almacenamiento alcanzado', {
+                description: `Solo tienes ${formatBytes(remaining)} disponibles de tus ${storageLimitMb} MB del Plan Free.`,
+            });
+            e.target.value = '';
+            return;
+        }
+
+        setSelectedFile(file);
     };
 
     const handleUpload = async () => {
@@ -71,20 +121,26 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
             return;
         }
 
+        // Doble check antes de subir
+        if (selectedFile.size > maxFileSizeBytes) {
+            toast.error(`El archivo supera el límite de ${maxFileSizeMb} MB`);
+            return;
+        }
+        if (storageLimitBytes && (allFilesBytes + selectedFile.size) > storageLimitBytes) {
+            toast.error('No hay espacio suficiente en tu almacenamiento');
+            return;
+        }
+
         try {
             setUploading(true);
             const fileExt = selectedFile.name.split('.').pop();
-            const fileName = `${patientId}/${Date.now()}.${fileExt}`;
-            const filePath = fileName;
+            const filePath = `${patientId}/${Date.now()}.${fileExt}`;
 
-            // 1. Upload to Storage
             const { error: uploadError } = await supabase.storage
                 .from('patient_files')
                 .upload(filePath, selectedFile);
-
             if (uploadError) throw uploadError;
 
-            // 2. Insert Metadata
             const { error: dbError } = await supabase
                 .from('patient_uploads')
                 .insert([{
@@ -92,100 +148,113 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                     file_name: selectedFile.name,
                     file_path: filePath,
                     file_type: selectedFile.type,
-                    description: description
+                    description: description,
+                    file_size_bytes: selectedFile.size,
                 }]);
-
             if (dbError) throw dbError;
 
             toast.success("Archivo subido correctamente");
             setSelectedFile(null);
             setDescription('');
-            // Reset input file manually if needed, or rely on key change
             const fileInput = document.getElementById('file-upload') as HTMLInputElement;
             if (fileInput) fileInput.value = '';
 
             fetchFiles();
+            if (storageLimitBytes) fetchTotalStorage();
 
-        } catch (error) {
-            console.error('Error uploading file:', error);
+        } catch {
             toast.error("Error al subir el archivo");
         } finally {
             setUploading(false);
         }
     };
 
-    const handleDelete = (file: PatientFile) => {
-        setFileToDelete(file);
-    };
-
     const confirmDeleteFile = async () => {
         if (!fileToDelete) return;
-
         try {
             setIsDeleting(true);
-            // 1. Delete from Storage
-            const { error: storageError } = await supabase.storage
-                .from('patient_files')
-                .remove([fileToDelete.file_path]);
-
-            if (storageError) {
-                console.error("Storage delete error", storageError);
-                // Continue identifying it might be already gone or db inconsistent
-            }
-
-            // 2. Delete from DB
-            const { error: dbError } = await supabase
-                .from('patient_uploads')
-                .delete()
-                .eq('id', fileToDelete.id);
-
-            if (dbError) throw dbError;
-
+            await supabase.storage.from('patient_files').remove([fileToDelete.file_path]);
+            const { error } = await supabase.from('patient_uploads').delete().eq('id', fileToDelete.id);
+            if (error) throw error;
             toast.success("Archivo eliminado");
             setFiles(prev => prev.filter(f => f.id !== fileToDelete.id));
+            setAllFilesBytes(prev => prev - (fileToDelete.file_size_bytes || 0));
             setFileToDelete(null);
-
-        } catch (error) {
-            console.error('Error deleting file:', error);
+        } catch {
             toast.error("Error al eliminar el archivo");
         } finally {
             setIsDeleting(false);
         }
     };
 
-    const getFileUrl = (filePath: string) => {
-        const { data } = supabase.storage
-            .from('patient_files')
-            .getPublicUrl(filePath);
-        return data.publicUrl;
-    };
+    const getFileUrl = (filePath: string) =>
+        supabase.storage.from('patient_files').getPublicUrl(filePath).data.publicUrl;
 
-    const getThumbnailUrl = (filePath: string) => {
-        // Optimizes bandwidth by requesting a resized version (Supabase Image Transformations)
-        // Requires Image Transformations enabled in Supabase Project
-        const { data } = supabase.storage
-            .from('patient_files')
-            .getPublicUrl(filePath, {
-                transform: {
-                    width: 300,
-                    height: 200,
-                    resize: 'cover',
-                    quality: 80
-                }
-            });
-        return data.publicUrl;
-    };
+    const getThumbnailUrl = (filePath: string) =>
+        supabase.storage.from('patient_files').getPublicUrl(filePath, {
+            transform: { width: 300, height: 200, resize: 'cover', quality: 80 }
+        }).data.publicUrl;
 
     const isImage = (type: string) => type.startsWith('image/');
 
+    const barColor = storageUsedPercent >= 90
+        ? 'bg-red-500'
+        : storageUsedPercent >= 70
+            ? 'bg-amber-400'
+            : 'bg-sky-500';
+
     return (
         <div className="space-y-6">
-            {/* Upload Section */}
-            {canUploadFiles ? (
-            <Card className="bg-slate-50 border-dashed border-2 border-slate-200">
+
+            {/* Barra de almacenamiento — solo Plan Free */}
+            {storageLimitMb !== null && (
+                <Card className={`border ${storageNearLimit ? 'border-amber-200 bg-amber-50/30' : 'border-slate-100 bg-slate-50/50'} rounded-2xl shadow-sm`}>
+                    <CardContent className="p-4 space-y-2.5">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="flex items-center gap-2 font-bold text-slate-600">
+                                <HardDrive className="w-4 h-4" />
+                                Almacenamiento (Plan Free)
+                            </span>
+                            <span className={`font-black text-xs ${storageFull ? 'text-red-600' : 'text-slate-500'}`}>
+                                {formatBytes(allFilesBytes)} / {storageLimitMb} MB
+                            </span>
+                        </div>
+                        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div
+                                className={`h-full rounded-full transition-all duration-700 ${barColor}`}
+                                style={{ width: `${storageUsedPercent}%` }}
+                            />
+                        </div>
+                        {storageNearLimit && !storageFull && (
+                            <p className="text-[11px] text-amber-700 font-medium flex items-center gap-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                Estás cerca de tu límite. Considera eliminar archivos o actualizar al Plan Pro.
+                            </p>
+                        )}
+                        {storageFull && (
+                            <p className="text-[11px] text-red-600 font-bold flex items-center gap-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                Almacenamiento lleno. Elimina archivos o actualiza al Plan Pro para continuar subiendo.
+                            </p>
+                        )}
+                        <p className="text-[10px] text-slate-400 font-medium">
+                            Límite por archivo: {maxFileSizeMb} MB
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Panel de subida */}
+            <Card className={`border-dashed border-2 ${storageFull ? 'border-red-200 bg-red-50/20' : 'border-slate-200 bg-slate-50'}`}>
                 <CardHeader>
                     <CardTitle className="text-lg">Subir Nuevo Archivo</CardTitle>
-                    <CardDescription>Formatos permitidos: Imágenes (JPG, PNG) y Documentos (PDF)</CardDescription>
+                    <CardDescription>
+                        Formatos permitidos: Imágenes (JPG, PNG) y Documentos (PDF)
+                        {storageLimitMb
+                            ? ` · Máx. ${maxFileSizeMb} MB por archivo`
+                            : ` · Máx. ${maxFileSizeMb} MB por archivo`
+                        }
+                    </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex flex-col gap-4">
@@ -194,13 +263,18 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                             <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                                 <Label
                                     htmlFor="file-upload"
-                                    className="cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-900 h-10 px-4 py-2 shadow-sm"
+                                    className={`cursor-pointer inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors border h-10 px-4 py-2 shadow-sm ${storageFull
+                                        ? 'border-red-200 bg-red-50 text-red-400 cursor-not-allowed pointer-events-none'
+                                        : 'border-gray-300 bg-gray-100 hover:bg-gray-200 text-gray-900'
+                                        }`}
                                 >
                                     <Upload className="mr-2 h-4 w-4" />
                                     {selectedFile ? 'Cambiar archivo' : 'Seleccionar archivo'}
                                 </Label>
                                 <span className="text-sm text-gray-500 truncate max-w-full sm:max-w-[200px]">
-                                    {selectedFile ? selectedFile.name : 'Ningún archivo seleccionado'}
+                                    {selectedFile
+                                        ? `${selectedFile.name} (${formatBytes(selectedFile.size)})`
+                                        : 'Ningún archivo seleccionado'}
                                 </span>
                                 <Input
                                     id="file-upload"
@@ -208,6 +282,7 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                                     onChange={handleFileSelect}
                                     accept="image/*,.pdf"
                                     className="hidden"
+                                    disabled={!!storageFull}
                                 />
                             </div>
                         </div>
@@ -225,55 +300,29 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                     <div className="flex justify-end">
                         <Button
                             onClick={handleUpload}
-                            disabled={uploading || !selectedFile}
+                            disabled={uploading || !selectedFile || !!storageFull}
                             className="bg-[#1c334a]"
                         >
                             {uploading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Subiendo...
-                                </>
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Subiendo...</>
                             ) : (
-                                <>
-                                    <Upload className="mr-2 h-4 w-4" /> Subir Archivo
-                                </>
+                                <><Upload className="mr-2 h-4 w-4" /> Subir Archivo</>
                             )}
                         </Button>
                     </div>
                 </CardContent>
             </Card>
-            ) : (
-                <Card className="bg-gradient-to-br from-slate-50 to-blue-50/30 border border-blue-100 overflow-hidden relative shadow-sm">
-                    <div className="absolute top-0 right-0 p-4 opacity-10">
-                        <Lock className="w-32 h-32" />
-                    </div>
-                    <CardContent className="p-10 flex flex-col items-center justify-center text-center space-y-4 relative z-10">
-                        <div className="w-16 h-16 rounded-full bg-white shadow-md flex items-center justify-center mb-2 border border-blue-50">
-                            <Lock className="w-8 h-8 text-[#1c334a]" />
-                        </div>
-                        <h3 className="text-xl font-extrabold text-[#1c334a] flex items-center gap-2">
-                            Almacenamiento Clínico
-                            <span className="bg-gradient-to-r from-amber-200 to-yellow-400 text-yellow-900 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-widest flex items-center gap-1 shadow-sm">
-                                <Sparkles className="w-3 h-3" /> Premium
-                            </span>
-                        </h3>
-                        <p className="text-sm text-slate-500 max-w-md font-medium leading-relaxed">
-                            La subida de estudios médicos, radiografías y documentos directamente al expediente del paciente es una función exclusiva.
-                        </p>
-                        <Button 
-                            className="mt-6 bg-[#1c334a] hover:bg-[#2a4560] text-white font-bold shadow-xl shadow-slate-200 transition-all hover:-translate-y-0.5 rounded-xl px-8 h-12"
-                            onClick={() => toast.info("Contacta al administrador para habilitar esta función en tu cuenta.")}
-                        >
-                            Solicitar Activación
-                        </Button>
-                    </CardContent>
-                </Card>
-            )}
 
-            {/* Files List */}
+            {/* Lista de archivos */}
             <div className="space-y-4">
                 <h3 className="font-semibold text-lg flex flex-wrap items-center gap-2">
                     <FileText className="w-5 h-5 text-gray-500 shrink-0" />
                     <span className="truncate">Archivos Guardados ({files.length})</span>
+                    {totalUsedBytes > 0 && (
+                        <span className="text-xs text-slate-400 font-normal">
+                            · {formatBytes(totalUsedBytes)} en este paciente
+                        </span>
+                    )}
                 </h3>
 
                 {loading ? (
@@ -289,7 +338,6 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                         {files.map(file => {
                             const publicUrl = getFileUrl(file.file_path);
                             const thumbnailUrl = getThumbnailUrl(file.file_path);
-
                             return (
                                 <Card key={file.id} className="overflow-hidden group hover:shadow-md transition-shadow">
                                     <div className="aspect-video bg-gray-100 relative items-center justify-center flex overflow-hidden">
@@ -303,32 +351,31 @@ export const PatientFiles = ({ patientId }: PatientFilesProps) => {
                                         ) : (
                                             <FileText className="w-16 h-16 text-gray-300" />
                                         )}
-                                        {/* Overlay Actions */}
                                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                                             <Button size="icon" variant="secondary" asChild title="Ver / Descargar">
                                                 <a href={publicUrl} target="_blank" rel="noopener noreferrer">
                                                     <ExternalLink className="w-4 h-4" />
                                                 </a>
                                             </Button>
-                                            {canUploadFiles && (
                                             <Button
                                                 size="icon"
                                                 variant="destructive"
-                                                onClick={() => handleDelete(file)}
+                                                onClick={() => setFileToDelete(file)}
                                                 title="Eliminar"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </Button>
-                                            )}
                                         </div>
                                     </div>
                                     <CardContent className="p-3 space-y-1">
-                                        <div className="font-medium truncate" title={file.file_name}>
+                                        <div className="font-medium truncate text-sm" title={file.file_name}>
                                             {file.description || file.file_name}
                                         </div>
                                         <div className="text-xs text-gray-500 flex justify-between">
-                                            <span>{format(new Date(file.created_at), "d MMMM yyyy", { locale: es })}</span>
-                                            <span className="uppercase">{file.file_type.split('/')[1] || 'FILE'}</span>
+                                            <span>{format(new Date(file.created_at), "d MMM yyyy", { locale: es })}</span>
+                                            <span className="text-slate-400">
+                                                {file.file_size_bytes ? formatBytes(file.file_size_bytes) : file.file_type.split('/')[1]?.toUpperCase() || 'FILE'}
+                                            </span>
                                         </div>
                                     </CardContent>
                                 </Card>

@@ -9,6 +9,8 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import UpdatePassword from "./pages/UpdatePassword";
 import PatientRecordPage from "./pages/PatientRecordPage";
+import SuperAdminPage from "./pages/SuperAdmin";
+
 
 const queryClient = new QueryClient();
 
@@ -79,6 +81,15 @@ const App = () => (
                   </PrivateRoute>
                 }
               />
+              <Route
+                path="/superadmin"
+                element={
+                  <PrivateRoute>
+                    <SuperAdminPage />
+                  </PrivateRoute>
+                }
+              />
+
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
