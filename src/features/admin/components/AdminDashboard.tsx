@@ -12,9 +12,10 @@ import { AddPatientDialog } from './AddPatientDialog';
 import { AdminAppointmentDialog } from './AdminAppointmentDialog';
 import { BookingTypeDialog } from './BookingTypeDialog';
 import { AdminLayout } from './AdminLayout';
-import { ClinicSettingsPage } from './ClinicSettingsPage';
 import { RecetarioPage } from './RecetarioPage';
 import { SubscriptionPage } from './SubscriptionPage';
+import { SuperAdminContent } from '@/pages/SuperAdmin';
+import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams } from 'react-router-dom';
 
 export const AdminDashboard = () => {
@@ -41,9 +42,10 @@ export const AdminDashboard = () => {
     const blockSlotOptions = [1, 2, 3, 4, 6, 8];
     const blockIntervalMinutes = hospitals.find(h => h.id === blockHospitalId)?.slotInterval || 15;
 
+    const { isSuperAdmin } = useAuth();
     const [bookingPatientData, setBookingPatientData] = useState<{ id?: string, name: string, email: string, phone: string, notes?: string } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
-    const currentTab = searchParams.get('tab') || 'overview';
+    const currentTab = searchParams.get('tab') || (isSuperAdmin ? 'superadmin' : 'overview');
 
     useEffect(() => {
         const handleCustomTabChange = (e: Event) => {
@@ -80,6 +82,7 @@ export const AdminDashboard = () => {
     };
 
     const NavItems = [
+        ...(isSuperAdmin ? [{ id: 'superadmin', label: 'Doctores (Super Admin)', icon: Users }] : []),
         { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: CalendarIcon },
         { id: 'patients', label: 'Pacientes', icon: Users },
@@ -238,6 +241,12 @@ export const AdminDashboard = () => {
         >
             {/* Tabs Content */}
             <Tabs value={currentTab} onValueChange={(val) => setSearchParams({ tab: val })} className="w-full">
+                {isSuperAdmin && (
+                    <TabsContent value="superadmin" className="mt-0 focus-visible:outline-none outline-none border-none p-6">
+                        <SuperAdminContent />
+                    </TabsContent>
+                )}
+
                 <TabsContent value="overview" className="mt-0 focus-visible:outline-none outline-none border-none">
                     <AdminOverview />
                 </TabsContent>

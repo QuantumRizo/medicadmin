@@ -84,13 +84,18 @@ export const AdminSidebar = ({
 
                         {isSuperAdmin && (
                             <button
-                                onClick={() => { navigate('/superadmin'); setIsMobileMenuOpen(false); }}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border border-amber-500/30 text-amber-300 hover:bg-amber-500/30 transition-all"
+                                onClick={() => { onTabChange('superadmin'); setIsMobileMenuOpen(false); }}
+                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold transition-all border ${
+                                    currentTab === 'superadmin'
+                                        ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20'
+                                        : 'bg-gradient-to-r from-amber-500/20 to-yellow-500/20 border-amber-500/30 text-amber-300 hover:bg-amber-500/30'
+                                }`}
                             >
-                                <Crown className="w-5 h-5 text-amber-400" />
+                                <Crown className={`w-5 h-5 ${currentTab === 'superadmin' ? 'text-white' : 'text-amber-400'}`} />
                                 Super Admin
                             </button>
                         )}
+
                     </div>
                 </nav>
 
