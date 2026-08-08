@@ -23,10 +23,14 @@ CREATE POLICY "Users can view own whatsapp usage"
         )
     );
 
--- Actualizar default de whatsapp_limit: Plan Free = 30, Pro = 300
--- (el dueño del sistema cambia manualmente a 300 en profiles para clientes Pro)
+-- Actualizar o crear columnas de whatsapp en profiles
+ALTER TABLE public.profiles
+    ADD COLUMN IF NOT EXISTS whatsapp_limit INT DEFAULT 30,
+    ADD COLUMN IF NOT EXISTS whatsapp_reminders_enabled BOOLEAN DEFAULT TRUE;
+
 ALTER TABLE public.profiles
     ALTER COLUMN whatsapp_limit SET DEFAULT 30;
+
 
 -- Actualizar registros existentes que tienen el default antiguo de 300 → 30
 -- (solo los que nunca fueron cambiados manualmente)
