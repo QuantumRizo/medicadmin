@@ -2,9 +2,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-    Check, Sparkles, ShieldCheck, MessageCircle,
+    Check, Sparkles, ShieldCheck,
     Calendar, Clock, Star, ArrowRight, HardDrive
 } from 'lucide-react';
+
 
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -15,7 +16,6 @@ const FREE_FEATURES = [
     { icon: ShieldCheck,    text: 'Expediente clínico digital ilimitado' },
     { icon: Star,           text: 'Recetario profesional con firma' },
     { icon: ShieldCheck,    text: 'Cumplimiento NOM-024-SSA3-2012' },
-    { icon: MessageCircle,  text: '30 recordatorios WhatsApp / mes' },
     { icon: HardDrive,      text: 'Archivos: 5 MB / archivo · 100 MB total' },
 ];
 
@@ -24,7 +24,6 @@ const PRO_FEATURES = [
     { icon: ShieldCheck,    text: 'Expediente clínico digital ilimitado' },
     { icon: Star,           text: 'Recetario profesional con firma' },
     { icon: ShieldCheck,    text: 'Cumplimiento NOM-024-SSA3-2012' },
-    { icon: MessageCircle,  text: '300 recordatorios WhatsApp / mes' },
     { icon: HardDrive,      text: 'Archivos: 25 MB / archivo · Almacenamiento ilimitado' },
     { icon: ShieldCheck,    text: 'Soporte técnico prioritario' },
 ];
