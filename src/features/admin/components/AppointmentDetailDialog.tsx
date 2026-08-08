@@ -303,7 +303,7 @@ export const AppointmentDetailDialog = ({
                                     </div>
                                     {editTime && (
                                         <div className="flex items-center gap-2 p-2.5 bg-sky-50 rounded-xl border border-sky-100 text-xs text-sky-700 font-bold">
-                                            <span>🕐</span>
+                                            <Clock className="w-3.5 h-3.5 shrink-0" />
                                             <span>
                                                 {formatTime(editTime)} → {(() => {
                                                     const [h, m] = editTime.split(':').map(Number);

@@ -297,7 +297,7 @@ export const SuperAdminContent = () => {
                                                 onClick={() => handleSetPlan(doc.app_id, 'Pro')}
                                                 className="text-[11px] font-black px-3.5 py-2 rounded-xl bg-[#1c334a] hover:bg-[#0f172a] text-white shadow-md shadow-slate-200 transition-all active:scale-95"
                                             >
-                                                Subir a Pro ✦
+                                                Subir a Pro
                                             </button>
                                         )}
                                     </div>

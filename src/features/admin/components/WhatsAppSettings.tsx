@@ -65,7 +65,7 @@ export const WhatsAppSettings = () => {
             toast.error('Error al guardar el cambio');
         } else {
             setEnabled(newValue);
-            toast.success(newValue ? 'Recordatorios activados ✓' : 'Recordatorios desactivados');
+            toast.success(newValue ? 'Recordatorios activados' : 'Recordatorios desactivados');
         }
         setSaving(false);
     };
@@ -184,7 +184,7 @@ export const WhatsAppSettings = () => {
                             <span>{usedPercent}% utilizado</span>
                             <span className={remaining === 0 ? 'text-red-500 font-bold' : ''}>
                                 {remaining === 0
-                                    ? '⚠ Sin mensajes disponibles este mes'
+                                    ? 'Sin mensajes disponibles este mes'
                                     : `${remaining} recordatorios disponibles`
                                 }
                             </span>

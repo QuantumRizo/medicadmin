@@ -202,7 +202,7 @@ export const AdminDashboard = () => {
                                         </div>
                                         {blockTime && (
                                             <div className="flex items-center gap-2 p-2.5 bg-slate-100 rounded-xl text-xs text-slate-600 font-bold">
-                                                <span>🔒</span>
+                                                <Ban className="w-3.5 h-3.5 shrink-0 text-slate-500" />
                                                 <span>
                                                     Bloqueando {formatTime(blockTime)} → {(() => {
                                                         const [h, m] = blockTime.split(':').map(Number);

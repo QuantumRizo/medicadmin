@@ -5,12 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { type Hospital } from "@/features/appointments/types";
-import { ArrowLeft, Building2, ChevronRight } from "lucide-react";
+import { ArrowLeft, Building2, ChevronRight, Clock, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { getTodayStr } from '@/lib/dateUtils';
 import { useAppointments } from "../../appointments/hooks/useAppointments";
 import { standardizePhone } from "@/lib/utils";
-import { AlertTriangle } from "lucide-react";
+
 
 interface AdminAppointmentDialogProps {
     hospitals: Hospital[];
@@ -320,9 +320,10 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                         )}
                                     </select>
                                     {appointment.date && bookingHospitalId && getAvailableSlots(appointment.date, bookingHospitalId).length === 0 && (
-                                        <p className="text-xs text-amber-600 font-bold ml-1 animate-in fade-in">
-                                            ⚠️ No hay horarios libres para la fecha seleccionada. Por favor elige otro día.
-                                        </p>
+                                         <p className="text-xs text-amber-600 font-bold ml-1 animate-in fade-in flex items-center gap-1">
+                                             <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                             <span>No hay horarios libres para la fecha seleccionada. Por favor elige otro día.</span>
+                                         </p>
                                     )}
                                 </div>
                             </div>
@@ -358,9 +359,9 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                     })}
                                 </div>
                                 {appointment.time && (
-                                    <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-xl border border-sky-100 text-sm text-sky-700 font-bold animate-in fade-in slide-in-from-top-1">
-                                        <span>🕐</span>
-                                        <span>
+                                     <div className="flex items-center gap-2 p-3 bg-sky-50 rounded-xl border border-sky-100 text-sm text-sky-700 font-bold animate-in fade-in slide-in-from-top-1">
+                                         <Clock className="w-4 h-4 shrink-0" />
+                                         <span>
                                             {formatTime(appointment.time)}
                                             {' → '}
                                             {(() => {

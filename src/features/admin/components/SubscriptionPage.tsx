@@ -59,7 +59,7 @@ export const SubscriptionPage = () => {
                 <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
                     <div className="space-y-3">
                         <Badge className={`${isPro ? 'bg-emerald-500' : 'bg-sky-500'} text-white border-none py-1.5 px-4 rounded-full font-black uppercase tracking-widest text-[10px]`}>
-                            {isPro ? '✦ Plan Pro — Activo' : '⌛ Plan Free — Período de Prueba'}
+                            {isPro ? 'Plan Pro — Activo' : 'Plan Free — Período de Prueba'}
                         </Badge>
                         <h2 className="text-3xl md:text-4xl font-black tracking-tight leading-tight">
                             {isPro
@@ -154,7 +154,7 @@ export const SubscriptionPage = () => {
                     {/* Recomendado badge */}
                     {!isPro && (
                         <div className="absolute top-0 left-0 right-0 bg-[#1c334a] text-white text-center py-2 text-[10px] font-black uppercase tracking-widest">
-                            ✦ Recomendado
+                            Recomendado
                         </div>
                     )}
                     {isPro && (

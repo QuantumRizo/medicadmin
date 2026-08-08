@@ -299,7 +299,7 @@ export const ClinicSettingsPage = () => {
                                             <p className="text-[10px] text-red-500 ml-1 font-medium">Las contraseñas no coinciden.</p>
                                         )}
                                         {confirmPassword && confirmPassword === newPassword && (
-                                            <p className="text-[10px] text-green-500 ml-1 font-medium">Las contraseñas coinciden ✓</p>
+                                            <p className="text-[10px] text-green-500 ml-1 font-medium">Las contraseñas coinciden.</p>
                                         )}
                                     </div>
 
