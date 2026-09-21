@@ -97,6 +97,16 @@ export const PatientMedicalHistory = ({ history, onChange }: PatientMedicalHisto
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-6 space-y-8 bg-white">
+                    <div className="max-w-xs space-y-1">
+                        <Label htmlFor="initial-history-date" className="text-xs font-semibold text-gray-500 uppercase">Fecha de Historia Clínica Inicial</Label>
+                        <Input
+                            id="initial-history-date"
+                            type="date"
+                            value={history.initialHistoryDate || ''}
+                            onChange={(e) => onChange('initialHistoryDate', e.target.value)}
+                            className="h-10 text-sm bg-gray-50/30 font-medium"
+                        />
+                    </div>
                     {/* Section 1: Antecedentes */}
                     <div>
                         <h3 className="text-sm font-bold text-[#1c334a] uppercase tracking-wider mb-4 border-b border-gray-100 pb-2">Antecedentes</h3>

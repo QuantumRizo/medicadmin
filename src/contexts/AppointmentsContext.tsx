@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { getNow } from '@/lib/dateUtils';
 import { SERVICES } from '../features/appointments/types';
-import type { Appointment, Patient, Hospital } from '../features/appointments/types';
+import type { Appointment, Patient, Hospital, MedicalHistory } from '../features/appointments/types';
 import { isAppointmentPast } from '@/lib/dateUtils';
 import { standardizePhone } from '@/lib/utils';
 import { useAuth } from './AuthContext';
@@ -17,7 +17,7 @@ interface AppointmentsContextType {
     fetchData: () => Promise<void>;
     saveAppointment: (appointmentData: Partial<Appointment>, patientData: Patient) => Promise<boolean>;
     updatePatient: (patient: Patient) => Promise<void>;
-    getAvailableSlots: (date: string, hospitalId: string) => string[];
+    getAvailableSlots: (date: string, hospitalId: string, excludeAppointmentId?: string, slotCount?: number) => string[];
     getAppointmentsByHospital: (hospitalId: string) => Appointment[];
     deleteAppointment: (appointmentId: string) => Promise<void>;
     deletePatient: (patientId: string) => Promise<void>;
@@ -172,16 +172,34 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             }
 
             if (patientId) {
-                await supabase.from('patients').update({
+                let medicalHistory: MedicalHistory | undefined;
+                if (patientData.medicalHistory?.dateOfBirth) {
+                    const { data: currentPatient, error: currentPatientError } = await supabase
+                        .from('patients')
+                        .select('medical_history')
+                        .eq('id', patientId)
+                        .eq('app_id', APP_ID)
+                        .single();
+                    if (currentPatientError) throw currentPatientError;
+                    medicalHistory = { ...(currentPatient.medical_history || {}), dateOfBirth: patientData.medicalHistory.dateOfBirth };
+                }
+                const patientUpdate: Record<string, unknown> = {
                     name: safeName,
                     phone: safePhone || patientData.phone,
                     email: safeEmail
-                }).eq('id', patientId);
+                };
+                if (medicalHistory) patientUpdate.medical_history = medicalHistory;
+                const { error: patientUpdateError } = await supabase.from('patients').update(patientUpdate).eq('id', patientId).eq('app_id', APP_ID);
+                if (patientUpdateError) throw patientUpdateError;
             } else {
+                const medicalHistory: Partial<MedicalHistory> | undefined = patientData.medicalHistory?.dateOfBirth
+                    ? { dateOfBirth: patientData.medicalHistory.dateOfBirth }
+                    : undefined;
                 const { data: newPatient, error: createError } = await supabase.from('patients').insert([{
                     name: safeName,
                     email: safeEmail,
                     phone: safePhone || patientData.phone,
+                    ...(medicalHistory ? { medical_history: medicalHistory } : {}),
                     app_id: APP_ID
                 }]).select().single();
                 if (createError) throw createError;
@@ -234,7 +252,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         }
     };
 
-    const getAvailableSlots = (date: string, hospitalId: string): string[] => {
+    const getAvailableSlots = (date: string, hospitalId: string, excludeAppointmentId?: string, slotCount: number = 1): string[] => {
         const hospital = hospitals.find(h => h.id === hospitalId);
         if (!hospital) return [];
         const slots: string[] = [];
@@ -243,7 +261,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         const startHour = startH + (startM / 60);
         const endHour = endH + (endM / 60);
         const interval = hospital.slotInterval || 15;
-        const existingForDay = appointments.filter(a => a.date === date);
+        const existingForDay = appointments.filter(a => a.date === date && a.hospitalId === hospitalId && a.id !== excludeAppointmentId);
         const now = getNow();
         const [year, month, day] = date.split('-').map(Number);
 
@@ -266,7 +284,9 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
             const slotDateTime = new Date(year, month - 1, day, h, m);
             if (slotDateTime <= now) { currentMinute += interval; continue; }
-            if (!occupiedMinutes.has(currentMinute)) slots.push(timeString);
+            const requestedSlotsFit = Array.from({ length: slotCount }, (_, index) => currentMinute + index * interval)
+                .every(minute => minute < endMinute && !occupiedMinutes.has(minute));
+            if (requestedSlotsFit) slots.push(timeString);
             currentMinute += interval;
         }
         return slots;
@@ -353,9 +373,11 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             if (updates.slotCount !== undefined) dbUpdates.slot_count = updates.slotCount;
             if (updates.date && updates.time) {
                 const newIsoDateTime = `${updates.date}T${updates.time}:00`;
-                const { data: conflictAppointments, error: conflictError } = await supabase.from('appointments').select('id').eq('app_id', APP_ID).eq('date', newIsoDateTime).neq('id', appointmentId);
-                if (conflictError) throw conflictError;
-                if (conflictAppointments && conflictAppointments.length > 0) throw new Error("Este horario ya está ocupado.");
+                const targetHospitalId = existing?.hospitalId;
+                const targetSlotCount = updates.slotCount ?? existing?.slotCount ?? 2;
+                if (!targetHospitalId || !getAvailableSlots(updates.date, targetHospitalId, appointmentId, targetSlotCount).includes(updates.time)) {
+                    throw new Error("Este horario ya no está disponible para la duración seleccionada.");
+                }
                 dbUpdates.date = newIsoDateTime;
             }
             const { error } = await supabase.from('appointments').update(dbUpdates).eq('id', appointmentId);

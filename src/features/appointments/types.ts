@@ -58,6 +58,7 @@ export interface ClinicalSession {
 
 export interface MedicalHistory {
     // Datos Generales
+    initialHistoryDate?: string; // Fecha en que se levantó la historia clínica inicial (YYYY-MM-DD)
     sex?: 'Masculino' | 'Femenino';
     dateOfBirth?: string; // YYYY-MM-DD
     maritalStatus?: 'Soltero' | 'Casado' | 'Divorciado' | 'Viudo' | 'Unión Libre';

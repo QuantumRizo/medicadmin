@@ -45,7 +45,7 @@ export const PatientPrintableRecord = ({ patient, history, clinicProfile }: Pati
                     HISTORIA CLÍNICA CONSOLIDADA
                 </h2>
                 <p className="text-[8pt] font-medium text-gray-400">
-                    Fecha de emisión: {format(getNow(), "dd/MM/yyyy")}
+                    Historia inicial: {history.initialHistoryDate ? format(parseISO(history.initialHistoryDate), "dd/MM/yyyy") : 'n/a'} · Emisión: {format(getNow(), "dd/MM/yyyy")}
                 </p>
             </div>
 

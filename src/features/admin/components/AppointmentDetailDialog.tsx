@@ -13,6 +13,7 @@ import {
     Trash2, 
     X, 
     Check,
+    FolderOpen,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,7 +29,8 @@ interface AppointmentDetailDialogProps {
     onOpenChange: (open: boolean) => void;
     onDelete: (id: string) => Promise<void>;
     onUpdate: (id: string, updates: Partial<Appointment>) => Promise<void>;
-    getAvailableSlots: (date: string, hospitalId: string) => string[];
+    getAvailableSlots: (date: string, hospitalId: string, excludeAppointmentId?: string, slotCount?: number) => string[];
+    onOpenPatientRecord?: (patientId: string) => void;
 }
 
 export const AppointmentDetailDialog = ({
@@ -39,7 +41,8 @@ export const AppointmentDetailDialog = ({
     onOpenChange,
     onDelete,
     onUpdate,
-    getAvailableSlots
+    getAvailableSlots,
+    onOpenPatientRecord
 }: AppointmentDetailDialogProps) => {
     const [isEditing, setIsEditing] = useState(false);
     const [editDate, setEditDate] = useState("");
@@ -198,6 +201,16 @@ export const AppointmentDetailDialog = ({
                             </div>
                         </div>
 
+                        {patient && appointment.reason !== 'blocked' && onOpenPatientRecord && (
+                            <Button
+                                variant="outline"
+                                onClick={() => onOpenPatientRecord(patient.id)}
+                                className="w-full h-12 rounded-xl border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100 font-bold"
+                            >
+                                <FolderOpen className="w-4 h-4 mr-2" /> Abrir expediente del paciente
+                            </Button>
+                        )}
+
                         <div className="flex gap-3 pt-4">
                             {!isAppointmentPast(appointment.date, appointment.time) && (
                                 <Button 
@@ -245,7 +258,7 @@ export const AppointmentDetailDialog = ({
                                         <label className="text-[10px] font-black uppercase tracking-widest">Nuevo Horario</label>
                                     </div>
                                     <div className="grid grid-cols-3 gap-2">
-                                        {getAvailableSlots(editDate, appointment.hospitalId).map((slot) => (
+                                        {getAvailableSlots(editDate, appointment.hospitalId, appointment.id, editSlotCount).map((slot) => (
                                             <button
                                                 key={slot}
                                                 onClick={() => setEditTime(slot)}

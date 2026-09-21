@@ -45,7 +45,7 @@ export const AdminDashboard = () => {
     const blockIntervalMinutes = hospitals.find(h => h.id === blockHospitalId)?.slotInterval || 15;
 
     const { isSuperAdmin } = useAuth();
-    const [bookingPatientData, setBookingPatientData] = useState<{ id?: string, name: string, email: string, phone: string, notes?: string } | null>(null);
+    const [bookingPatientData, setBookingPatientData] = useState<{ id?: string, name: string, email: string, phone: string, notes?: string, dateOfBirth?: string } | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const currentTab = searchParams.get('tab') || (isSuperAdmin ? 'superadmin' : 'overview');
 
@@ -308,7 +308,8 @@ export const AdminDashboard = () => {
                         name: patient.name,
                         email: patient.email,
                         phone: patient.phone,
-                        notes: ''
+                        notes: '',
+                        dateOfBirth: patient.medicalHistory?.dateOfBirth
                     });
                     setIsAppointmentDialogOpen(true);
                 }}

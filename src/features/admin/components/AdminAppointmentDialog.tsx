@@ -17,8 +17,8 @@ interface AdminAppointmentDialogProps {
     onSave: (appointmentData: any, patientData: any) => Promise<boolean>;
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    getAvailableSlots: (date: string, hospitalId: string) => string[];
-    initialPatientData?: { id?: string, name: string, email: string, phone: string, notes?: string } | null;
+    getAvailableSlots: (date: string, hospitalId: string, excludeAppointmentId?: string, slotCount?: number) => string[];
+    initialPatientData?: { id?: string, name: string, email: string, phone: string, notes?: string, dateOfBirth?: string } | null;
 }
 
 export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, getAvailableSlots, initialPatientData }: AdminAppointmentDialogProps) => {
@@ -52,7 +52,8 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                     email: initialPatientData.email,
                     emailError: '',
                     phone: initialPatientData.phone,
-                    notes: initialPatientData.notes || ''
+                    notes: initialPatientData.notes || '',
+                    dateOfBirth: initialPatientData.dateOfBirth || ''
                 });
             } else {
                 // Reset to empty if no initial data
@@ -62,7 +63,8 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                     email: '',
                     emailError: '',
                     phone: '',
-                    notes: ''
+                    notes: '',
+                    dateOfBirth: ''
                 });
             }
         }
@@ -75,7 +77,8 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
         email: '',
         emailError: '',
         phone: '',
-        notes: ''
+        notes: '',
+        dateOfBirth: ''
     });
 
     const [appointment, setAppointment] = useState({
@@ -135,11 +138,14 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                     specificService: appointment.reason === 'specific-service' ? appointment.serviceName : undefined,
                     slotCount: appointment.slotCount
                 },
-                patient
+                {
+                    ...patient,
+                    medicalHistory: patient.dateOfBirth ? { dateOfBirth: patient.dateOfBirth } : undefined
+                }
             );
             onOpenChange(false);
             // Reset form
-            setPatient({ id: undefined, name: '', email: '', emailError: '', phone: '', notes: '' });
+            setPatient({ id: undefined, name: '', email: '', emailError: '', phone: '', notes: '', dateOfBirth: '' });
             setAppointment({ serviceName: '', date: '', time: '', reason: '', slotCount: 2 });
             setBookingHospitalId(null);
         } catch (error: any) {
@@ -238,6 +244,17 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                 </div>
                             </div>
                             <div className="space-y-2">
+                                <Label htmlFor="admin-date-of-birth" className="text-slate-700 font-bold ml-1">Fecha de Nacimiento</Label>
+                                <Input
+                                    id="admin-date-of-birth"
+                                    type="date"
+                                    value={patient.dateOfBirth}
+                                    max={getTodayStr()}
+                                    onChange={(e) => handlePatientChange('dateOfBirth', e.target.value)}
+                                    className="rounded-xl border-slate-200 h-11 focus-visible:ring-sky-500"
+                                />
+                            </div>
+                            <div className="space-y-2">
                                 <Label htmlFor="admin-email" className="text-slate-700 font-bold ml-1">Correo Electrónico (Opcional)</Label>
                                 <Input
                                     id="admin-email"
@@ -307,7 +324,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                         <option value="">Seleccionar hora...</option>
                                         {(appointment.date && bookingHospitalId) ? (
                                             (() => {
-                                                const availableSlots = getAvailableSlots(appointment.date, bookingHospitalId);
+                                                const availableSlots = getAvailableSlots(appointment.date, bookingHospitalId, undefined, appointment.slotCount);
                                                 if (availableSlots.length === 0) {
                                                     return <option value="" disabled>No hay horarios disponibles para esta fecha</option>;
                                                 }
@@ -319,7 +336,7 @@ export const AdminAppointmentDialog = ({ hospitals, onSave, open, onOpenChange, 
                                             <option disabled>Seleccione una fecha primero</option>
                                         )}
                                     </select>
-                                    {appointment.date && bookingHospitalId && getAvailableSlots(appointment.date, bookingHospitalId).length === 0 && (
+                                    {appointment.date && bookingHospitalId && getAvailableSlots(appointment.date, bookingHospitalId, undefined, appointment.slotCount).length === 0 && (
                                          <p className="text-xs text-amber-600 font-bold ml-1 animate-in fade-in flex items-center gap-1">
                                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                                              <span>No hay horarios libres para la fecha seleccionada. Por favor elige otro día.</span>

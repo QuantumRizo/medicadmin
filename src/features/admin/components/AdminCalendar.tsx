@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getNow } from '@/lib/dateUtils';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,6 +40,7 @@ interface AdminCalendarProps {
 }
 
 export const AdminCalendar = (_props: AdminCalendarProps) => {
+    const navigate = useNavigate();
     const { appointments, patients, hospitals, updateAppointment, getAvailableSlots, deleteAppointment } = useAppointments();
     const [currentDate, setCurrentDate] = useState(getNow());
     const [selectedDay, setSelectedDay] = useState<Date | null>(null);
@@ -411,6 +413,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                     onDelete={handleDeleteAppointment}
                     onUpdate={handleUpdateAppointment}
                     getAvailableSlots={getAvailableSlots || (() => [])}
+                    onOpenPatientRecord={(patientId) => navigate(`/admin/pacientes/${patientId}`)}
                 />
             </CardContent>
         </Card>
