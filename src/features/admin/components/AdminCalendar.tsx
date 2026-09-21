@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNow } from '@/lib/dateUtils';
+import { getNow, isTodayMX } from '@/lib/dateUtils';
 import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -164,6 +164,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                 {calendarDays.map((day, idx) => {
                                     const dayAppts = getDayAppointments(day);
                                     const isCurrentMonth = isSameMonth(day, monthStart);
+                                    const isClinicToday = isTodayMX(format(day, 'yyyy-MM-dd'));
                                     return (
                                         <div
                                             key={day.toISOString()}
@@ -171,13 +172,13 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                 border-b border-r border-slate-50 p-2 transition-all hover:bg-slate-50/50 flex flex-col gap-1 relative overflow-hidden group
                                                 ${!isCurrentMonth ? 'bg-slate-50/30 text-slate-300' : 'bg-white'}
                                                 ${(idx + 1) % 7 === 0 ? 'border-r-0' : ''}
-                                                ${isToday(day) ? 'bg-sky-50/50' : ''}
+                                                ${isClinicToday ? 'bg-sky-50/50' : ''}
                                             `}
                                         >
                                             <div className="flex justify-between items-center mb-1">
                                                 <span className={`
                                                     text-xs font-bold h-7 w-7 flex items-center justify-center rounded-xl transition-all
-                                                    ${isToday(day) ? 'bg-[#1c334a] text-white shadow-lg shadow-blue-900/20' : 'text-slate-600 group-hover:bg-slate-100'}
+                                                    ${isClinicToday ? 'bg-[#1c334a] text-white shadow-lg shadow-blue-900/20' : 'text-slate-600 group-hover:bg-slate-100'}
                                                 `}>
                                                     {format(day, 'd')}
                                                 </span>
@@ -233,14 +234,17 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                 <div className="py-4 border-r border-slate-100 flex items-center justify-center">
                                     <Clock className="w-5 h-5 text-slate-300" />
                                 </div>
-                                {currentWeekDays.map((day, idx) => (
-                                    <div key={idx} className={`py-4 px-2 border-r last:border-r-0 border-slate-100 flex flex-col items-center gap-1.5 ${isToday(day) ? 'bg-sky-50/50' : ''}`}>
+                                {currentWeekDays.map((day, idx) => {
+                                    const isClinicToday = isTodayMX(format(day, 'yyyy-MM-dd'));
+                                    return (
+                                    <div key={idx} className={`py-4 px-2 border-r last:border-r-0 border-slate-100 flex flex-col items-center gap-1.5 ${isClinicToday ? 'bg-sky-50/50' : ''}`}>
                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{weekDaysShort[idx]}</span>
-                                        <span className={`text-sm font-extrabold w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isToday(day) ? 'bg-[#1c334a] text-white shadow-lg shadow-blue-900/20' : 'text-slate-600 bg-slate-100/50 font-black'}`}>
+                                        <span className={`text-sm font-extrabold w-9 h-9 flex items-center justify-center rounded-xl transition-all ${isClinicToday ? 'bg-[#1c334a] text-white shadow-lg shadow-blue-900/20' : 'text-slate-600 bg-slate-100/50 font-black'}`}>
                                             {format(day, 'd')}
                                         </span>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             <div className="relative overflow-y-auto custom-scrollbar" style={{ maxHeight: 'calc(100vh - 400px)' }}>
@@ -253,7 +257,7 @@ export const AdminCalendar = (_props: AdminCalendarProps) => {
                                                 </span>
                                             </div>
                                             {currentWeekDays.map((day, dayIdx) => (
-                                                <div key={dayIdx} className={`border-r last:border-r-0 border-b border-slate-50 relative ${isToday(day) ? 'bg-blue-50/10' : ''}`} />
+                                                <div key={dayIdx} className={`border-r last:border-r-0 border-b border-slate-50 relative ${isTodayMX(format(day, 'yyyy-MM-dd')) ? 'bg-blue-50/10' : ''}`} />
                                             ))}
                                         </React.Fragment>
                                     ))}

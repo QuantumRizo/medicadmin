@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { format, isAfter, parseISO } from 'date-fns';
-import { getNow } from '@/lib/dateUtils';
+import { format, parseISO } from 'date-fns';
+import { compareClinicDateTimes, isAppointmentPast } from '@/lib/dateUtils';
 import { es } from 'date-fns/locale';
 import { Search, MapPin, Phone, Mail, Trash2, Calendar, ArrowRight, User, FileText, CalendarPlus, NotebookPen } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,14 +49,11 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
     // --- Optimization: Pre-calculate first upcoming appointment for each patient ---
     const nextAppointmentsMap = useMemo(() => {
         const map = new Map<string, Appointment>();
-        const today = getNow();
-        
         appointments.forEach(a => {
             if (a.reason === 'blocked') return;
-            const apptDate = new Date(a.date + 'T' + a.time);
-            if (isAfter(apptDate, today)) {
+            if (!isAppointmentPast(a.date, a.time)) {
                 const current = map.get(a.patientId);
-                if (!current || apptDate < new Date(current.date + 'T' + current.time)) {
+                if (!current || compareClinicDateTimes(a.date, a.time, current.date, current.time) < 0) {
                     map.set(a.patientId, a);
                 }
             }
@@ -69,19 +66,14 @@ export const PatientDirectory = ({ onBookAppointment }: PatientDirectoryProps) =
         const patientAppts = appointments
             .filter(a => a.patientId === patientId)
             .sort((a, b) => {
-                const dateA = new Date(a.date + 'T' + a.time);
-                const dateB = new Date(b.date + 'T' + b.time);
-                return dateB.getTime() - dateA.getTime(); // Newest first
+                return compareClinicDateTimes(b.date, b.time, a.date, a.time); // Newest first
             });
 
-        const today = getNow();
         const upcoming = patientAppts.filter(a => {
-            const apptDate = new Date(a.date + 'T' + a.time);
-            return isAfter(apptDate, today) && a.reason !== 'blocked';
+            return !isAppointmentPast(a.date, a.time) && a.reason !== 'blocked';
         });
         const history = patientAppts.filter(a => {
-            const apptDate = new Date(a.date + 'T' + a.time);
-            return !isAfter(apptDate, today) || a.reason === 'blocked';
+            return isAppointmentPast(a.date, a.time) || a.reason === 'blocked';
         });
 
         return { upcoming, history };

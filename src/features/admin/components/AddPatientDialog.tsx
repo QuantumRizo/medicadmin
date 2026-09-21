@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { UserPlus, CalendarPlus, CheckCircle, AlertTriangle, ShieldAlert, UserRound } from "lucide-react";
 import { useAppointments } from "../../appointments/hooks/useAppointments";
 import { standardizePhone } from "@/lib/utils";
+import { getNow } from '@/lib/dateUtils';
 
 interface AddPatientDialogProps {
     open: boolean;
@@ -17,7 +18,7 @@ interface AddPatientDialogProps {
 function checkIsMinor(dob: string): boolean {
     if (!dob) return false;
     const birth = new Date(dob + 'T12:00:00');
-    const now = new Date();
+    const now = getNow();
     let years = now.getFullYear() - birth.getFullYear();
     const m = now.getMonth() - birth.getMonth();
     if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) years--;

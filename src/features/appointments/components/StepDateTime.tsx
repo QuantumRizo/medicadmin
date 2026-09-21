@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Clock } from "lucide-react";
+import { getNow } from '@/lib/dateUtils';
 
 interface StepDateTimeProps {
     date: Date | undefined;
@@ -41,7 +42,9 @@ export const StepDateTime = ({
                             selected={date}
                             onSelect={onSelectDate}
                             disabled={(date: Date) => {
-                            const isPast = date < new Date() || date < new Date("1900-01-01");
+                            const clinicToday = getNow();
+                            clinicToday.setHours(0, 0, 0, 0);
+                            const isPast = date < clinicToday || date < new Date("1900-01-01");
                             const isNotAllowedDay = allowedDays ? !allowedDays.includes(date.getDay()) : false;
                             return isPast || isNotAllowedDay;
                             }}

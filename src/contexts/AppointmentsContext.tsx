@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
-import { getNow } from '@/lib/dateUtils';
+import { compareClinicDateTimes, getCurrentTimeStr, getTodayStr } from '@/lib/dateUtils';
 import { SERVICES } from '../features/appointments/types';
 import type { Appointment, Patient, Hospital, MedicalHistory } from '../features/appointments/types';
 import { isAppointmentPast } from '@/lib/dateUtils';
@@ -81,11 +81,11 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 if (dateStr.includes('T')) {
                     const parts = dateStr.split('T');
                     dateStr = parts[0];
-                    timeStr = parts[1].substring(0, 5);
+                    if (!timeStr) timeStr = parts[1].substring(0, 5);
                 } else if (dateStr.includes(' ')) {
                     const parts = dateStr.split(' ');
                     dateStr = parts[0];
-                    timeStr = parts[1].substring(0, 5);
+                    if (!timeStr) timeStr = parts[1].substring(0, 5);
                 }
                 return {
                     id: a.id,
@@ -262,8 +262,8 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
         const endHour = endH + (endM / 60);
         const interval = hospital.slotInterval || 15;
         const existingForDay = appointments.filter(a => a.date === date && a.hospitalId === hospitalId && a.id !== excludeAppointmentId);
-        const now = getNow();
-        const [year, month, day] = date.split('-').map(Number);
+        const today = getTodayStr();
+        const currentTime = getCurrentTimeStr();
 
         // Build a set of all occupied minutes (each appointment blocks slotCount slots)
         const occupiedMinutes = new Set<number>();
@@ -282,8 +282,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             const h = Math.floor(currentMinute / 60);
             const m = currentMinute % 60;
             const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-            const slotDateTime = new Date(year, month - 1, day, h, m);
-            if (slotDateTime <= now) { currentMinute += interval; continue; }
+            if (compareClinicDateTimes(date, timeString, today, currentTime) <= 0) { currentMinute += interval; continue; }
             const requestedSlotsFit = Array.from({ length: slotCount }, (_, index) => currentMinute + index * interval)
                 .every(minute => minute < endMinute && !occupiedMinutes.has(minute));
             if (requestedSlotsFit) slots.push(timeString);

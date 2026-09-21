@@ -1,4 +1,4 @@
-import { format, parseISO, isAfter } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Appointment, Patient, Hospital } from '../../../appointments/types';
-import { getNow } from '@/lib/dateUtils';
+import { compareClinicDateTimes, isAppointmentPast } from '@/lib/dateUtils';
 import { formatTime } from '../../../appointments/utils';
 import { AppointmentDetailDialog } from '../AppointmentDetailDialog';
 
@@ -34,16 +34,13 @@ export const PatientAppointments = ({
 
     const patientAppointments = appointments
         .filter(a => a.patientId === patient.id)
-        .sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
+        .sort((a, b) => compareClinicDateTimes(b.date, b.time, a.date, a.time));
 
-    const todayDate = getNow();
     const upcomingAppts = patientAppointments.filter(a => {
-        const apptDate = new Date(a.date + 'T' + a.time);
-        return isAfter(apptDate, todayDate) && a.reason !== 'blocked';
+        return !isAppointmentPast(a.date, a.time) && a.reason !== 'blocked';
     });
     const pastAppts = patientAppointments.filter(a => {
-        const apptDate = new Date(a.date + 'T' + a.time);
-        return !isAfter(apptDate, todayDate) || a.reason === 'blocked';
+        return isAppointmentPast(a.date, a.time) || a.reason === 'blocked';
     });
 
     return (

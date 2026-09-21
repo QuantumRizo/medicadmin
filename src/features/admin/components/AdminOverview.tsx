@@ -2,7 +2,7 @@ import { useAppointments } from '../../appointments/hooks/useAppointments';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Calendar, TrendingUp, Clock, MapPin } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-import { isTodayMX, isThisWeekMX, getNow, getTodayStr } from '@/lib/dateUtils';
+import { compareClinicDateTimes, isTodayMX, isThisWeekMX, getNow, getTodayStr } from '@/lib/dateUtils';
 import { es } from 'date-fns/locale';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -271,7 +271,7 @@ export const AdminOverview = ({ }: AdminOverviewProps) => {
                                 <div className="space-y-4">
                                     {weekAppointments
                                         .filter(a => !isTodayMX(a.date) && a.date >= getTodayStr())
-                                        .sort((a, b) => new Date(a.date + 'T' + a.time).getTime() - new Date(b.date + 'T' + b.time).getTime())
+                                        .sort((a, b) => compareClinicDateTimes(a.date, a.time, b.date, b.time))
                                         .slice(0, 5)
                                         .map(apt => {
                                             const patient = patients.find(p => p.id === apt.patientId);

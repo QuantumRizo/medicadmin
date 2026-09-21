@@ -12,7 +12,7 @@ export const PatientPrintableRecord = ({ patient, history, clinicProfile }: Pati
 
     const calculateAge = (dobString?: string) => {
         if (!dobString) return '';
-        const dob = new Date(dobString);
+        const dob = new Date(`${dobString}T12:00:00`);
         const today = getNow();
         let age = today.getFullYear() - dob.getFullYear();
         const m = today.getMonth() - dob.getMonth();

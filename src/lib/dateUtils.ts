@@ -8,13 +8,41 @@
 /** Zona horaria de la clínica. Configurable en un solo lugar. */
 export const APP_TIMEZONE = 'America/Mexico_City';
 
+type MexicoCityDateTimeParts = {
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+    second: number;
+};
+
+function getMexicoCityDateTimeParts(): MexicoCityDateTimeParts {
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: APP_TIMEZONE,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23',
+    });
+    const parts = Object.fromEntries(formatter.formatToParts(new Date())
+        .filter(({ type }) => type !== 'literal')
+        .map(({ type, value }) => [type, Number(value)]));
+
+    return parts as unknown as MexicoCityDateTimeParts;
+}
+
 /**
  * Retorna un Date ajustado a la zona horaria de la clínica.
  * Usar en lugar de `new Date()` para TODA lógica de negocio.
  */
 export function getNow(): Date {
-    const mxTimeString = new Date().toLocaleString("en-US", { timeZone: APP_TIMEZONE });
-    return new Date(mxTimeString);
+    const { year, month, day, hour, minute, second } = getMexicoCityDateTimeParts();
+    // Date de presentación: conserva el reloj de CDMX sin depender del huso del navegador.
+    return new Date(year, month - 1, day, hour, minute, second);
 }
 
 /**
@@ -22,11 +50,21 @@ export function getNow(): Date {
  * Usar para comparar contra fechas de citas almacenadas.
  */
 export function getTodayStr(): string {
-    const now = getNow();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    const { year, month, day } = getMexicoCityDateTimeParts();
+    return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+/** Hora actual de la clínica en formato comparable HH:mm. */
+export function getCurrentTimeStr(): string {
+    const { hour, minute } = getMexicoCityDateTimeParts();
+    return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+/** Compara dos citas locales de CDMX sin convertirlas a UTC. */
+export function compareClinicDateTimes(dateA: string, timeA: string, dateB: string, timeB: string): number {
+    const first = `${dateA}T${timeA}`;
+    const second = `${dateB}T${timeB}`;
+    return first.localeCompare(second);
 }
 
 /**
@@ -67,11 +105,7 @@ export function isThisWeekMX(dateStr: string): boolean {
 export const isAppointmentPast = (date: string, time: string): boolean => {
     try {
         if (!date || !time) return false;
-
-        const nowMx = getNow();
-        const aptDateTime = new Date(`${date}T${time}:00`);
-
-        return aptDateTime < nowMx;
+        return compareClinicDateTimes(date, time, getTodayStr(), getCurrentTimeStr()) <= 0;
     } catch (e) {
         console.error("Error validating past appointment", e);
         return false;

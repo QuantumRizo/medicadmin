@@ -16,8 +16,11 @@ export const printReport = ({ patient, history, clinicProfile }: PrintReportPara
 
     const calcAge = (dob: string | undefined) => {
         if (!dob) return 'n/a';
-        const diff = Date.now() - new Date(dob).getTime();
-        return String(Math.floor(diff / (365.25 * 24 * 3600 * 1000)));
+        const birth = new Date(`${dob}T12:00:00`);
+        let age = today.getFullYear() - birth.getFullYear();
+        const monthDifference = today.getMonth() - birth.getMonth();
+        if (monthDifference < 0 || (monthDifference === 0 && today.getDate() < birth.getDate())) age--;
+        return String(age);
     };
 
     const sessions = (history.clinicalSessions || [])
@@ -25,7 +28,7 @@ export const printReport = ({ patient, history, clinicProfile }: PrintReportPara
         .sort((a: ClinicalSession, b: ClinicalSession) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     const sessionRows = sessions.map((s: ClinicalSession) => {
-        const d = new Date(s.date);
+        const d = new Date(`${s.date}T12:00:00`);
         const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
         return `
             <div style="margin-bottom:14px; padding-left:12px; border-left:2px solid #cbd5e1;">
@@ -37,7 +40,7 @@ export const printReport = ({ patient, history, clinicProfile }: PrintReportPara
     }).join('');
 
     const dobStr = history.dateOfBirth
-        ? (() => { const d = new Date(history.dateOfBirth); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
+        ? (() => { const d = new Date(`${history.dateOfBirth}T12:00:00`); return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; })()
         : 'n/a';
 
     const html = `<!DOCTYPE html>

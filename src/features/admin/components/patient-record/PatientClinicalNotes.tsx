@@ -95,7 +95,7 @@ export const PatientClinicalNotes = ({
                 <div className="relative">
                     <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-5 pt-3 pb-1 bg-gray-50 border-b flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-400 inline-block" />
-                        Nota activa · {activeSession?.date ? format(parseISO(activeSession.date), 'dd \' de \'MMMM yyyy', { locale: es }) : format(new Date(), 'dd \' de \'MMMM yyyy', { locale: es })}
+                        Nota activa · {activeSession?.date ? format(parseISO(activeSession.date), 'dd \' de \'MMMM yyyy', { locale: es }) : format(getNow(), 'dd \' de \'MMMM yyyy', { locale: es })}
                         <span className="ml-auto text-gray-300">Editable hasta finalizar</span>
                     </div>
                     <div className="absolute top-[2.5rem] bottom-0 left-[3.5rem] w-px bg-red-300/70 pointer-events-none z-10" />

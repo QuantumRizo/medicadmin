@@ -8,6 +8,7 @@
  */
 
 import { useMemo } from 'react';
+import { getNow } from '@/lib/dateUtils';
 
 interface UsePatientAgeResult {
     isMinor: boolean;
@@ -23,7 +24,7 @@ export function usePatientAge(dateOfBirth?: string): UsePatientAgeResult {
         }
 
         const dob = new Date(dateOfBirth + 'T12:00:00'); // Evitar desfase UTC
-        const now = new Date();
+        const now = getNow();
 
         if (isNaN(dob.getTime())) {
             return { isMinor: false, ageLabel: '', ageInMonths: 0, ageInYears: 0 };
