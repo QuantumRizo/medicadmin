@@ -18,6 +18,7 @@
 ## Convenciones de datos importantes
 
 - Las citas se guardan como `appointments.date` en formato ISO; el contexto las expone como `date` (`YYYY-MM-DD`) y `time` (`HH:mm`).
+- La agenda representa horarios locales de la clínica en `America/Mexico_City`; no conviertas citas a UTC. Usa las utilidades de `src/lib/dateUtils.ts` para “hoy”, disponibilidad, comparaciones o estados de cita. Las citas antiguas pueden traer fecha y hora combinadas, por lo que la lectura debe conservar compatibilidad.
 - Identificar pacientes por teléfono debe usar `standardizePhone` de `src/lib/utils.ts`.
 - Las citas y pacientes se aíslan por `app_id`; conserva el filtro al leer, actualizar o eliminar datos.
 - Para cambios de agenda, usa `getAvailableSlots`; considera sede, duración y traslapes. No permitir cambios en citas pasadas (`isAppointmentPast`).
