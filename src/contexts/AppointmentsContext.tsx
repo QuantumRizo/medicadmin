@@ -77,7 +77,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
 
             const mappedAppointments: Appointment[] = (appointmentsData || []).map((a: any) => {
                 let dateStr = a.date;
-                let timeStr = "";
+                let timeStr = a.time || "";
                 if (dateStr.includes('T')) {
                     const parts = dateStr.split('T');
                     dateStr = parts[0];
@@ -206,14 +206,14 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 patientId = newPatient.id;
             }
 
-            const isoDateTime = `${appointmentData.date}T${appointmentData.time}:00`;
             const { error: appointmentError } = await supabase.from('appointments').insert([{
                 patient_id: patientId,
                 hospital_id: appointmentData.hospitalId,
                 reason: appointmentData.reason,
                 specific_service: appointmentData.specificService,
                 slot_count: appointmentData.slotCount ?? 2,
-                date: isoDateTime,
+                date: appointmentData.date,
+                time: appointmentData.time,
                 app_id: APP_ID
             }]);
             if (appointmentError) throw appointmentError;
@@ -343,12 +343,12 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 if (createError) throw createError;
                 blockPatientId = newBlockPatient.id;
             }
-            const isoDateTime = `${date}T${time}:00`;
             const { error } = await supabase.from('appointments').insert([{
                 patient_id: blockPatientId,
                 hospital_id: hospitalId,
                 reason: 'blocked',
-                date: isoDateTime,
+                date,
+                time,
                 specific_service: 'Horario Bloqueado Manualmente',
                 slot_count: slotCount,
                 app_id: APP_ID
@@ -372,13 +372,13 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
             if (updates.status) dbUpdates.status = updates.status;
             if (updates.slotCount !== undefined) dbUpdates.slot_count = updates.slotCount;
             if (updates.date && updates.time) {
-                const newIsoDateTime = `${updates.date}T${updates.time}:00`;
                 const targetHospitalId = existing?.hospitalId;
                 const targetSlotCount = updates.slotCount ?? existing?.slotCount ?? 2;
                 if (!targetHospitalId || !getAvailableSlots(updates.date, targetHospitalId, appointmentId, targetSlotCount).includes(updates.time)) {
                     throw new Error("Este horario ya no está disponible para la duración seleccionada.");
                 }
-                dbUpdates.date = newIsoDateTime;
+                dbUpdates.date = updates.date;
+                dbUpdates.time = updates.time;
             }
             const { error } = await supabase.from('appointments').update(dbUpdates).eq('id', appointmentId);
             if (error) throw error;
