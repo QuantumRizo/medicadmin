@@ -206,14 +206,14 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 patientId = newPatient.id;
             }
 
+            const appointmentDateTime = `${appointmentData.date}T${appointmentData.time}:00`;
             const { error: appointmentError } = await supabase.from('appointments').insert([{
                 patient_id: patientId,
                 hospital_id: appointmentData.hospitalId,
                 reason: appointmentData.reason,
                 specific_service: appointmentData.specificService,
                 slot_count: appointmentData.slotCount ?? 2,
-                date: appointmentData.date,
-                time: appointmentData.time,
+                date: appointmentDateTime,
                 app_id: APP_ID
             }]);
             if (appointmentError) throw appointmentError;
@@ -326,6 +326,9 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
 
     const blockSlot = async (hospitalId: string, date: string, time: string, slotCount: number = 2) => {
         try {
+            if (!getAvailableSlots(date, hospitalId, undefined, slotCount).includes(time)) {
+                throw new Error('Este horario ya no está disponible para la duración seleccionada.');
+            }
             let blockPatientId;
             const systemEmail = `block_${APP_ID}@system.local`;
             const { data: existingBlockPatient } = await supabase.from('patients').select('id').eq('email', systemEmail).eq('app_id', APP_ID).maybeSingle();
@@ -342,12 +345,12 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 if (createError) throw createError;
                 blockPatientId = newBlockPatient.id;
             }
+            const blockDateTime = `${date}T${time}:00`;
             const { error } = await supabase.from('appointments').insert([{
                 patient_id: blockPatientId,
                 hospital_id: hospitalId,
                 reason: 'blocked',
-                date,
-                time,
+                date: blockDateTime,
                 specific_service: 'Horario Bloqueado Manualmente',
                 slot_count: slotCount,
                 app_id: APP_ID
@@ -376,8 +379,7 @@ export const AppointmentsProvider = ({ children }: { children: ReactNode }) => {
                 if (!targetHospitalId || !getAvailableSlots(updates.date, targetHospitalId, appointmentId, targetSlotCount).includes(updates.time)) {
                     throw new Error("Este horario ya no está disponible para la duración seleccionada.");
                 }
-                dbUpdates.date = updates.date;
-                dbUpdates.time = updates.time;
+                dbUpdates.date = `${updates.date}T${updates.time}:00`;
             }
             const { error } = await supabase.from('appointments').update(dbUpdates).eq('id', appointmentId);
             if (error) throw error;

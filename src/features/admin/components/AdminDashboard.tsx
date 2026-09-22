@@ -43,6 +43,9 @@ export const AdminDashboard = () => {
 
     const blockSlotOptions = [1, 2, 3, 4, 6, 8];
     const blockIntervalMinutes = hospitals.find(h => h.id === blockHospitalId)?.slotInterval || 15;
+    const availableBlockSlots = blockDate && blockHospitalId
+        ? getAvailableSlots(blockDate, blockHospitalId, undefined, blockSlotCount)
+        : [];
 
     const { isSuperAdmin } = useAuth();
     const [bookingPatientData, setBookingPatientData] = useState<{ id?: string, name: string, email: string, phone: string, notes?: string, dateOfBirth?: string } | null>(null);
@@ -136,7 +139,7 @@ export const AdminDashboard = () => {
                                     <select
                                         className="flex h-12 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-2 text-sm focus:ring-2 focus:ring-red-500 transition-all outline-none appearance-none font-bold text-slate-700"
                                         value={blockHospitalId}
-                                        onChange={(e) => setBlockHospitalId(e.target.value)}
+                                        onChange={(e) => { setBlockHospitalId(e.target.value); setBlockTime(''); }}
                                     >
                                         {hospitals.map(h => (
                                             <option key={h.id} value={h.id}>{h.name}</option>
@@ -150,7 +153,7 @@ export const AdminDashboard = () => {
                                             type="date"
                                             className="h-12 rounded-xl border-slate-200 bg-slate-50/50 px-4 focus:ring-2 focus:ring-red-500 font-bold text-slate-700"
                                             value={blockDate}
-                                            onChange={(e) => setBlockDate(e.target.value)}
+                                            onChange={(e) => { setBlockDate(e.target.value); setBlockTime(''); }}
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -162,9 +165,9 @@ export const AdminDashboard = () => {
                                         >
                                             <option value="">Hora...</option>
                                             {(blockDate && blockHospitalId)
-                                                ? (getAvailableSlots ? getAvailableSlots(blockDate, blockHospitalId).map(slot => (
+                                                ? availableBlockSlots.map(slot => (
                                                     <option key={slot} value={slot}>{formatTime(slot)}</option>
-                                                )) : null)
+                                                ))
                                                 : <option disabled>...</option>
                                             }
                                         </select>
@@ -187,7 +190,7 @@ export const AdminDashboard = () => {
                                                     <button
                                                         key={n}
                                                         type="button"
-                                                        onClick={() => setBlockSlotCount(n)}
+                                                        onClick={() => { setBlockSlotCount(n); setBlockTime(''); }}
                                                         className={`h-12 rounded-xl text-xs font-black transition-all flex flex-col items-center justify-center border-2 ${
                                                             isSelected
                                                                 ? 'bg-slate-800 text-white border-slate-800 shadow-lg scale-105'
@@ -215,7 +218,7 @@ export const AdminDashboard = () => {
                                             </div>
                                         )}
                                     </div>
-                                    <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId} className="w-full h-14 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-xl shadow-slate-200 transition-all active:scale-95">
+                                    <Button onClick={handleBlockSlot} disabled={isBlocking || !blockDate || !blockTime || !blockHospitalId || !availableBlockSlots.includes(blockTime)} className="w-full h-14 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-bold shadow-xl shadow-slate-200 transition-all active:scale-95">
                                         {isBlocking ? "Guardando..." : "Confirmar NO CITAR"}
                                     </Button>
                                     <Button variant="ghost" onClick={() => setIsBlockDialogOpen(false)} className="w-full mt-2 rounded-xl h-10 font-bold text-slate-400">Cancelar</Button>
